@@ -1,11 +1,12 @@
 using System;
+using UnityEngine;
+using UnityEngine.InputSystem.Users;
+using UnityEngine.UIElements;
+
 #if UNITY_EDITOR
 using UnityEditor;
 using UnityEditor.UIElements;
 #endif
-using UnityEngine;
-using UnityEngine.InputSystem.Users;
-using UnityEngine.UIElements;
 
 namespace Tanks.Complete
 {
@@ -14,13 +15,37 @@ namespace Tanks.Complete
     {
         public Transform m_SpawnPoint;                          // The position and direction the tank will have when it spawns.
         [HideInInspector] public int m_PlayerNumber;            // This specifies which player this the manager for.
-        [HideInInspector] public GameObject m_Instance;         // A reference to the instance of the tank when it is created.
+        [HideInInspector] public GameObject m_Instance;         // A reference to the instance of the body when it is created.
+        [HideInInspector] public GameObject m_TurretInstance;   // A reference to the instance of the turret when it is created.
         [HideInInspector] public int m_Wins;                    // The number of wins this player has so far.
-        public int ControlIndex { get; set; } = 1;              //this defines the index of the control 1 = left keyboard or pad, 2 = right keyboard, -1 = no control
-
-        private TankMovement m_Movement;                        // Reference to tank's movement script, used to disable and enable control.
+        // References to the components on the spawned objects
+        private PlayerMovement m_Movement;                      // Reference to body's movement script
+        private Shooting m_Shooting;                            // Reference to turret's shooting script
         private GameObject m_CanvasGameObject;                  // Used to disable the world space UI during the Starting and Ending phases of each round.
-        
+
+        /// <summary>
+        /// Spawn the player's tank: body + turret attached to TurretPos
+        /// </summary>
+        public void SpawnTank(GameObject bodyPrefab, GameObject turretPrefab, Vector3 position, Quaternion rotation)
+        {
+            // Spawn the body (chassis)
+            m_Instance = UnityEngine.Object.Instantiate(bodyPrefab, position, rotation);
+
+            // Find the TurretPos transform on the body
+            Transform turretPos = m_Instance.transform.Find("TurretPos");
+            if (turretPos == null)
+            {
+                Debug.LogError("PlayerManager: На теле танка не найден объект 'TurretPos' для крепления башни!");
+                return;
+            }
+
+            // Spawn the turret as a child of TurretPos
+            if (turretPrefab != null)
+            {
+                m_TurretInstance = UnityEngine.Object.Instantiate(turretPrefab, turretPos);
+            }
+        }
+
         public void Setup (int controlIndex = 1)
         {
             if (m_Instance == null)
@@ -29,15 +54,25 @@ namespace Tanks.Complete
                 return;
             }
 
-            // Get references to the components.
-            m_Movement = m_Instance.GetComponent<TankMovement> ();
-            // Проверка, если компонент не найден
+            // Get references to the components on the body
+            m_Movement = m_Instance.GetComponent<PlayerMovement> ();
             if (m_Movement == null)
             {
-                Debug.LogError("PlayerManager: Не найден компонент TankMovement на танке!");
+                Debug.LogError("PlayerManager: Не найден компонент PlayerMovement на теле танка!");
                 return;
             }
-            // Ищем Canvas среди детей, если он есть
+
+            // Get reference to the Shooting component on the turret
+            if (m_TurretInstance != null)
+            {
+                m_Shooting = m_TurretInstance.GetComponent<Shooting>();
+                if (m_Shooting == null)
+                {
+                    Debug.LogError("PlayerManager: Не найден компонент Shooting на башне танка!");
+                }
+            }
+
+            // Find Canvas among children
             var canvas = m_Instance.GetComponentInChildren<Canvas>();
             if (canvas != null)
             {
@@ -45,30 +80,30 @@ namespace Tanks.Complete
             }
             else
             {
-                m_CanvasGameObject = null; // Canvas может отсутствовать
+                m_CanvasGameObject = null;
             }
-
-            // Настраиваем номер игрока и контрольный индекс
-            m_PlayerNumber = 1; // Для одного игрока всегда 1
-            m_Movement.m_PlayerNumber = m_PlayerNumber;
-            m_Movement.ControlIndex = controlIndex;
-            
         }
 
         // Used during the phases of the game where the player shouldn't be able to control their tank.
         public void DisableControl ()
         {
-            m_Movement.enabled = false;
-            //m_Shooting.enabled = false;
-            m_CanvasGameObject.SetActive (false);
+            if (m_Movement != null)
+                m_Movement.enabled = false;
+            if (m_Shooting != null)
+                m_Shooting.enabled = false;
+            if (m_CanvasGameObject != null)
+                m_CanvasGameObject.SetActive (false);
         }
 
         // Used during the phases of the game where the player should be able to control their tank.
         public void EnableControl ()
         {
-            m_Movement.enabled = true;
-            //m_Shooting.enabled = true;
-            m_CanvasGameObject.SetActive (true);
+            if (m_Movement != null)
+                m_Movement.enabled = true;
+            if (m_Shooting != null)
+                m_Shooting.enabled = true;
+            if (m_CanvasGameObject != null)
+                m_CanvasGameObject.SetActive (true);
         }
 
         // Used at the start of each round to put the tank into it's default state.
@@ -79,14 +114,16 @@ namespace Tanks.Complete
 
             m_Instance.SetActive (false);
             m_Instance.SetActive (true);
+
+            if (m_TurretInstance != null)
+            {
+                m_TurretInstance.SetActive (false);
+                m_TurretInstance.SetActive (true);
+            }
         }
     }
     
     #if UNITY_EDITOR
-    // This is a class only used in the unity editor (and not in the final game). It customizes how the TankManager component
-    // will appear in the Inspector. The default make a foldout entry where SpawnPoint is "inside" the TankManager foldout
-    // in the manager array in the GameManager. This change this behavior to directly display the spawn point in the TankManager
-    // Inspector, simplifying the display in the GameManager.
     [CustomPropertyDrawer(typeof(PlayerManager))]
     public class PlayerManagerDrawer : PropertyDrawer
     {

@@ -1245,10 +1245,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Tanks.Complete.GameManager
   m_CameraControl: {fileID: 1336069159}
   m_PlayerTank: {fileID: 4429314903902635707, guid: bde31b9e734835448926c98665aa2e73, type: 3}
-  m_SpawnPoint:
+  m_PlayerManager:
     m_SpawnPoint: {fileID: 313934840}
     m_PlayerNumber: 0
     m_Instance: {fileID: 0}
+    m_TurretInstance: {fileID: 0}
     m_Wins: 0
 --- !u!4 &715155887
 Transform:
@@ -1325,6 +1326,14 @@ PrefabInstance:
       propertyPath: m_TankPreview
       value: 
       objectReference: {fileID: 4429314903902635707, guid: bde31b9e734835448926c98665aa2e73, type: 3}
+    - target: {fileID: 3797440199762199645, guid: 2eef465a6e41386469df2050240978fd, type: 3}
+      propertyPath: m_TurretPrefabs.Array.size
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3797440199762199645, guid: 2eef465a6e41386469df2050240978fd, type: 3}
+      propertyPath: m_ChassisPrefabs.Array.size
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 5359587759607355533, guid: 2eef465a6e41386469df2050240978fd, type: 3}
       propertyPath: m_Name
       value: MenuUI
@@ -2207,6 +2216,14 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 5176431340674476565, guid: f52ffe6b6e625624587694514d8698a7, type: 3}
+      propertyPath: m_AnchorMax.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5176431340674476565, guid: f52ffe6b6e625624587694514d8698a7, type: 3}
+      propertyPath: m_AnchorMax.y
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 7386768383760709194, guid: f52ffe6b6e625624587694514d8698a7, type: 3}
       propertyPath: m_LocalPosition.x
       value: -20.74

@@ -173,6 +173,13 @@ MonoBehaviour:
   m_StartButton: {fileID: 6909545780881607199}
   m_PauseMenuButton: {fileID: 972975883622053066}
   m_TankPreview: {fileID: 4429314903902635707, guid: bde31b9e734835448926c98665aa2e73, type: 3}
+  m_ChassisDropdown: {fileID: 0}
+  m_TurretDropdown: {fileID: 0}
+  m_ChassisPrefabs:
+  - {fileID: 7910786161505004784, guid: f52ffe6b6e625624587694514d8698a7, type: 3}
+  m_TurretPrefabs:
+  - {fileID: 8646141104796471080, guid: c64536326b0047b42964324163b1c262, type: 3}
+  m_PreviewContainer: {fileID: 1365208695842956396}
 --- !u!1 &2056448928251698089
 GameObject:
   m_ObjectHideFlags: 0

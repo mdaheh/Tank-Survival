@@ -71,10 +71,20 @@ namespace Tanks.Complete
                 rectTransform.SetAsLastSibling();
             }
 
-            // We use an array because the code was originally written to have any number of prefabs and player, but
-            // this was fixed to always 4 tanks during development, so to avoid rewriting the code for static number,
-            // we simply transform our 4 static tank prefab into an array
-            var tankPrefab = m_GameManager.m_PlayerTank;
+            // Setup dropdowns if they exist
+            if (m_ChassisDropdown != null && m_ChassisPrefabs != null && m_ChassisPrefabs.Length > 0)
+            {
+                SetupDropdown(m_ChassisDropdown, m_ChassisPrefabs);
+                m_ChassisDropdown.onValueChanged.AddListener(index => { m_SelectedChassisIndex = index; UpdatePreview(); });
+                m_SelectedChassisIndex = 0;
+            }
+
+            if (m_TurretDropdown != null && m_TurretPrefabs != null && m_TurretPrefabs.Length > 0)
+            {
+                SetupDropdown(m_TurretDropdown, m_TurretPrefabs);
+                m_TurretDropdown.onValueChanged.AddListener(index => { m_SelectedTurretIndex = index; UpdatePreview(); });
+                m_SelectedTurretIndex = 0;
+            }
         }
 
         void StartGame()
@@ -85,7 +95,12 @@ namespace Tanks.Complete
             // PlayerData is a structure that allow to pass info between the menu and the GameManager
             GameManager.PlayerData playerData = new GameManager.PlayerData()
             {
-                UsedPrefab = m_TankPreview
+                ChassisPrefab = (m_ChassisPrefabs != null && m_SelectedChassisIndex < m_ChassisPrefabs.Length) 
+                    ? m_ChassisPrefabs[m_SelectedChassisIndex] 
+                    : null,
+                TurretPrefab = (m_TurretPrefabs != null && m_SelectedTurretIndex < m_TurretPrefabs.Length) 
+                    ? m_TurretPrefabs[m_SelectedTurretIndex] 
+                    : null
             };
 
             m_GameManager.StartGame(playerData);
@@ -116,6 +131,34 @@ namespace Tanks.Complete
             // but Unity Play cannot enforce an orientation so we need it to be readable even in portrait)
             float ratio = Screen.width / (float)Screen.height;
             m_CanvasScaler.matchWidthOrHeight = ratio > 1.0f ? 1.0f : 0.0f;
+        }
+
+        /// <summary>
+        /// Populate a Dropdown with names from an array of GameObjects
+        /// </summary>
+        private void SetupDropdown(Dropdown dropdown, GameObject[] prefabs)
+        {
+            dropdown.ClearOptions();
+            List<string> options = new List<string>();
+            for (int i = 0; i < prefabs.Length; i++)
+            {
+                if (prefabs[i] != null)
+                {
+                    options.Add(prefabs[i].name);
+                }
+            }
+            dropdown.AddOptions(options);
+            dropdown.value = 0;
+        }
+
+        /// <summary>
+        /// Update the preview with currently selected chassis and turret
+        /// </summary>
+        private void UpdatePreview()
+        {
+            // TODO: Update m_TankPreview with selected chassis and turret
+            Debug.Log($"Selected Chassis: {m_ChassisPrefabs?[m_SelectedChassisIndex]?.name ?? "none"}, " +
+                      $"Turret: {m_TurretPrefabs?[m_SelectedTurretIndex]?.name ?? "none"}");
         }
     }
 }

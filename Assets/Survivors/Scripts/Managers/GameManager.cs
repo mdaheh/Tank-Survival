@@ -15,18 +15,19 @@ namespace Tanks.Complete
             Game
         }
 
-        // Data about the selected tanks passed from the menu to the GameManager
+        // Хранит необходимые данные о игроке
         public class PlayerData
         {
-            public GameObject UsedPrefab;
+            public GameObject ChassisPrefab;  // Префаб шасси
+            public GameObject TurretPrefab;   // Префаб туррели
             public int ControlIndex;
         }
 
-        public CameraControl m_CameraControl;       // Reference to the CameraControl script for control during different phases.
+        public CameraControl m_CameraControl;       // Скрипт управления камерой
         public GameObject m_PlayerTank;
         
         [FormerlySerializedAs("m_Tanks")] 
-        public PlayerManager m_SpawnPoint;         // A collection of managers for enabling and disabling different aspects of the tanks.
+        public PlayerManager m_PlayerManager;         // A collection of managers for enabling and disabling different aspects of the tanks.
         
         private GameState m_CurrentState;
 
@@ -69,19 +70,21 @@ namespace Tanks.Complete
 
         private void SpawnTank()
         {
-            if (m_TankData == null || m_SpawnPoint == null)
+            if (m_TankData == null || m_PlayerManager == null)
             {
                 Debug.LogError("GameManager: Данные танка или точка спавна не настроены!");
                 return;
             }
-            GameObject tankInstance = Instantiate(
-                m_TankData.UsedPrefab, 
-                m_SpawnPoint.m_SpawnPoint.position, 
-                m_SpawnPoint.m_SpawnPoint.rotation
+
+            // Spawn the tank (chassis + turret)
+            m_PlayerManager.SpawnTank(
+                m_TankData.ChassisPrefab,
+                m_TankData.TurretPrefab,
+                m_PlayerManager.m_SpawnPoint.position,
+                m_PlayerManager.m_SpawnPoint.rotation
             );
 
-            m_SpawnPoint.m_Instance = tankInstance;
-            m_SpawnPoint.Setup();
+            m_PlayerManager.Setup(m_TankData.ControlIndex);
 
         }
 
@@ -89,22 +92,22 @@ namespace Tanks.Complete
         private void SetCameraTarget()
         {
             // Проверяем, что танк уже создан
-            if (m_SpawnPoint.m_Instance == null)
+            if (m_PlayerManager.m_Instance == null)
             {
                 Debug.LogError("GameManager: Танк еще не создан для установки таргета камеры.");
                 return;
             }
             // Получаем трансформацию танка
-            Transform tankTransform = m_SpawnPoint.m_Instance.transform;
+            Transform tankTransform = m_PlayerManager.m_Instance.transform;
 
             m_CameraControl.m_Target = tankTransform;
         }
 
         private void EnableTankControl()
         {
-            if (m_SpawnPoint != null && m_SpawnPoint.m_Instance != null)
+            if (m_PlayerManager != null && m_PlayerManager.m_Instance != null)
             {
-                m_SpawnPoint.EnableControl();
+                m_PlayerManager.EnableControl();
             }
         }
     }
