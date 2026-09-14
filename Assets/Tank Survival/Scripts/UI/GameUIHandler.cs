@@ -7,7 +7,7 @@ using UnityEngine.InputSystem.OnScreen;
 using UnityEngine.Rendering.Universal;
 using UnityEngine.UI;
 
-namespace Tanks.Complete
+namespace TankSurvival
 {
     // This handle both the start menu (selecting which tank each player use) and the pause menu if present
     public class GameUIHandler : MonoBehaviour

@@ -8,7 +8,7 @@ using UnityEditor;
 using UnityEditor.UIElements;
 #endif
 
-namespace Tanks.Complete
+namespace TankSurvival
 {
     [Serializable]
     public class PlayerManager

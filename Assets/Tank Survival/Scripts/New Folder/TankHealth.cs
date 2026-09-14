@@ -1,7 +1,7 @@
 ﻿using UnityEngine;
 using UnityEngine.UI;
 
-namespace Tanks.Complete
+namespace TankSurvival
 {
     public class TankHealth : MonoBehaviour
     {

@@ -3,7 +3,7 @@ using UnityEngine;
 using Button = UnityEngine.UI.Button;
 using Image = UnityEngine.UI.Image;
 
-namespace Tanks.Complete
+namespace TankSurvival
 {
     // Class handling on "slot" in the main menu, which is an entry that show a tank preview, display its stat and allow
     // to add that tank to the game or not and change who control it (p1, p2 or computer)

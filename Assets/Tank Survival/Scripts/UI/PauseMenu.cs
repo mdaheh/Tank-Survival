@@ -2,7 +2,7 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
-namespace Tanks.Complete
+namespace TankSurvival
 {
     // Handle a simple pause menu displaying the control and allowing to restart the game or quit it.
     public class PauseMenu : MonoBehaviour

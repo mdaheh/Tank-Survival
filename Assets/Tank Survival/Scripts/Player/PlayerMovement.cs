@@ -1,7 +1,7 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
 
-namespace Tanks.Complete
+namespace TankSurvival
 {
     public class PlayerMovement : MonoBehaviour
     {

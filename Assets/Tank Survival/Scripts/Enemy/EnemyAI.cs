@@ -5,7 +5,7 @@ using UnityEngine;
 using UnityEngine.AI;
 using Random = UnityEngine.Random;
 
-namespace Tanks.Complete
+namespace TankSurvival
 {
     public class EnemyAI : MonoBehaviour
     {

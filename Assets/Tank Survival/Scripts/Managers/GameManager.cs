@@ -4,7 +4,7 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.Serialization;
 
-namespace Tanks.Complete
+namespace TankSurvival
 {
     public class GameManager : MonoBehaviour
     {

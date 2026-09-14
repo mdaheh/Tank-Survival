@@ -2,7 +2,7 @@ using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.InputSystem.Users;
 
-namespace Tanks.Complete
+namespace TankSurvival
 {
     /// <summary>
     /// Contains the Input System Input User that is linked to a Tank. This take care of copying the default input actions

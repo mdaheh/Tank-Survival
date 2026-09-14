@@ -4,7 +4,7 @@ using UnityEngine.Rendering;
 using NUnit.Framework.Constraints;
 using Unity.VisualScripting;
 
-namespace Tanks.Complete
+namespace TankSurvival
 {
     public class Shooting : MonoBehaviour
     {
