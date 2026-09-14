@@ -24,7 +24,6 @@ namespace Tanks.Complete
         }
 
         public CameraControl m_CameraControl;       // Скрипт управления камерой
-        public GameObject m_PlayerTank;
         
         [FormerlySerializedAs("m_Tanks")] 
         public PlayerManager m_PlayerManager;         // A collection of managers for enabling and disabling different aspects of the tanks.

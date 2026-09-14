@@ -31,6 +31,10 @@ namespace Tanks.Complete
         public GameObject[] m_ChassisPrefabs; 
         public GameObject[] m_TurretPrefabs;
         
+        // Дефолтные префабы (используются, если ничего не выбрано или массив пуст)
+        public GameObject m_DefaultChassis;
+        public GameObject m_DefaultTurret;
+        
         // Ссылка на объект, в котором крутится превью
         public GameObject m_PreviewContainer; 
 
@@ -75,16 +79,19 @@ namespace Tanks.Complete
             if (m_ChassisDropdown != null && m_ChassisPrefabs != null && m_ChassisPrefabs.Length > 0)
             {
                 SetupDropdown(m_ChassisDropdown, m_ChassisPrefabs);
+                m_SelectedChassisIndex = m_ChassisDropdown.value;
                 m_ChassisDropdown.onValueChanged.AddListener(index => { m_SelectedChassisIndex = index; UpdatePreview(); });
-                m_SelectedChassisIndex = 0;
             }
 
             if (m_TurretDropdown != null && m_TurretPrefabs != null && m_TurretPrefabs.Length > 0)
             {
                 SetupDropdown(m_TurretDropdown, m_TurretPrefabs);
+                m_SelectedTurretIndex = m_TurretDropdown.value;
                 m_TurretDropdown.onValueChanged.AddListener(index => { m_SelectedTurretIndex = index; UpdatePreview(); });
-                m_SelectedTurretIndex = 0;
             }
+
+            // Initial preview setup
+            UpdatePreview();
         }
 
         void StartGame()
@@ -152,13 +159,37 @@ namespace Tanks.Complete
         }
 
         /// <summary>
-        /// Update the preview with currently selected chassis and turret
+        /// Update the preview with currently selected chassis and turret.
+        /// Falls back to default prefabs if nothing is selected or arrays are empty.
         /// </summary>
         private void UpdatePreview()
         {
-            // TODO: Update m_TankPreview with selected chassis and turret
-            Debug.Log($"Selected Chassis: {m_ChassisPrefabs?[m_SelectedChassisIndex]?.name ?? "none"}, " +
-                      $"Turret: {m_TurretPrefabs?[m_SelectedTurretIndex]?.name ?? "none"}");
+            if (m_PlayerPreview == null)
+                return;
+
+            // Resolve selected chassis (use default if array is empty or index out of range)
+            GameObject selectedChassis = null;
+            if (m_ChassisPrefabs != null && m_SelectedChassisIndex >= 0 && m_SelectedChassisIndex < m_ChassisPrefabs.Length)
+            {
+                selectedChassis = m_ChassisPrefabs[m_SelectedChassisIndex];
+            }
+            if (selectedChassis == null)
+            {
+                selectedChassis = m_DefaultChassis;
+            }
+
+            // Resolve selected turret
+            GameObject selectedTurret = null;
+            if (m_TurretPrefabs != null && m_SelectedTurretIndex >= 0 && m_SelectedTurretIndex < m_TurretPrefabs.Length)
+            {
+                selectedTurret = m_TurretPrefabs[m_SelectedTurretIndex];
+            }
+            if (selectedTurret == null)
+            {
+                selectedTurret = m_DefaultTurret;
+            }
+
+            m_PlayerPreview.SetTankPreview(selectedChassis, selectedTurret);
         }
     }
 }

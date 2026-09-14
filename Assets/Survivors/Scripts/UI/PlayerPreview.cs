@@ -12,8 +12,10 @@ namespace Tanks.Complete
         [Header("References")]
         public RectTransform m_TankPreviewPosition;     // The Transform on which to place the Tank preview so it display at the right place on screen
         public RectTransform m_ControlChoiceRoot;       // The root of which all the control choice buttons are parented to
-        public GameObject TankPreview { get; set; }         // The preview instance that show this tank rotating in the menu
-        public GameObject TankPrefab { get; private set; }  // The prefab this slot is based on
+        public GameObject TankPreview { get; private set; }  // The chassis preview instance (rotates as a whole)
+        public GameObject ChassisPrefab { get; private set; }
+        public GameObject TurretPrefab { get; private set; }
+        private GameObject m_TurretInstance;            // Instance of the turret spawned in preview
         private Camera m_MenuCamera;                        // The Camera used to display the menu
 
         // Start is called once before the first execution of Update after the MonoBehaviour is created
@@ -31,45 +33,71 @@ namespace Tanks.Complete
             }
         }
 
+        /// <summary>
+        /// Set up the preview with a single combined tank prefab (legacy support).
+        /// </summary>
         public void SetTankPreview(GameObject prefab)
         {
-            // If we already have a tank preview, destroy it
-            if (TankPreview != null)
-            {
-                Destroy(TankPreview);
-            }
+            SetTankPreview(prefab, null);
+        }
 
-            //assign the right prefab
-            TankPrefab = prefab;
-            //then instantiate it as the preview
-            TankPreview = Instantiate(prefab);
-            
-            //move it to the right preview position so it appears in the right spot on screen
+        /// <summary>
+        /// Set up the preview with separate chassis and turret prefabs.
+        /// If turretPrefab is null, no turret is shown.
+        /// </summary>
+        public void SetTankPreview(GameObject chassisPrefab, GameObject turretPrefab)
+        {
+            // Destroy previous preview
+            DestroyPreview();
+
+            ChassisPrefab = chassisPrefab;
+            TurretPrefab = turretPrefab;
+
+            if (chassisPrefab == null)
+                return;
+
+            // Instantiate the chassis
+            TankPreview = Instantiate(chassisPrefab);
+
+            // Move chassis to the right preview position
             var position = m_MenuCamera.WorldToScreenPoint(m_TankPreviewPosition.position);
             TankPreview.transform.position =
                 m_MenuCamera.ScreenToWorldPoint(position) + Vector3.back * 3.0f;
-            
-            // go through all renderers of that tank
-            // MeshRenderer[] renderers = TankPreview.GetComponentsInChildren<MeshRenderer>();
-            // for (int i = 0; i < renderers.Length; i++)
-            // {
-            //     var renderer = renderers[i];
-            //     for (int j = 0; j < renderer.materials.Length; ++j)
-            //     {
-            //         // then when we find the TankColor material
-            //         if (renderer.materials[j].name.Contains("TankColor"))
-            //         {
-            //             // Set its color to the slot color
-            //             renderer.materials[j].color = m_SlotColor;
-            //         }
-            //     }
-            // }
-            
-            //Disable all audio
-            var audioSource = TankPreview.GetComponentsInChildren<AudioSource>();
-            foreach (var source in audioSource)
+
+            // Find TurretPos on the chassis and spawn turret there
+            if (turretPrefab != null)
+            {
+                Transform turretPos = TankPreview.transform.Find("TurretPos");
+                if (turretPos != null)
+                {
+                    m_TurretInstance = Instantiate(turretPrefab, turretPos);
+                }
+                else
+                {
+                    Debug.LogWarning("PlayerPreview: На шасси не найден объект 'TurretPos' для крепления башни!");
+                }
+            }
+
+            // Disable all audio sources
+            var audioSources = TankPreview.GetComponentsInChildren<AudioSource>();
+            foreach (var source in audioSources)
             {
                 Destroy(source);
+            }
+        }
+
+        private void DestroyPreview()
+        {
+            if (m_TurretInstance != null)
+            {
+                Destroy(m_TurretInstance);
+                m_TurretInstance = null;
+            }
+
+            if (TankPreview != null)
+            {
+                Destroy(TankPreview);
+                TankPreview = null;
             }
         }
     }
