@@ -10,18 +10,35 @@ using UnityEditor.UIElements;
 
 namespace TankSurvival
 {
-    [Serializable]
-    public class PlayerManager
+    /// <summary>
+    /// MonoBehaviour Singleton для управления танком игрока.
+    /// Отвечает за спавн, настройку и контроль танка.
+    /// </summary>
+    public class PlayerManager : MonoBehaviour
     {
         public Transform m_SpawnPoint;                          // The position and direction the tank will have when it spawns.
         [HideInInspector] public int m_PlayerNumber;            // This specifies which player this the manager for.
         [HideInInspector] public GameObject m_Instance;         // A reference to the instance of the body when it is created.
         [HideInInspector] public GameObject m_TurretInstance;   // A reference to the instance of the turret when it is created.
         [HideInInspector] public int m_Wins;                    // The number of wins this player has so far.
+        
         // References to the components on the spawned objects
         private PlayerMovement m_Movement;                      // Reference to body's movement script
         private Shooting m_Shooting;                            // Reference to turret's shooting script
         private GameObject m_CanvasGameObject;                  // Used to disable the world space UI during the Starting and Ending phases of each round.
+
+        private void Awake()
+        {
+            // Singleton pattern
+            if (Instance != null && Instance != this)
+            {
+                Destroy(gameObject);
+                return;
+            }
+            Instance = this;
+        }
+
+        public static PlayerManager Instance { get; private set; }
 
         /// <summary>
         /// Spawn the player's tank: body + turret attached to TurretPos
@@ -46,7 +63,7 @@ namespace TankSurvival
             }
         }
 
-        public void Setup (int controlIndex = 1)
+        public void Setup(int controlIndex = 1)
         {
             if (m_Instance == null)
             {
@@ -55,7 +72,7 @@ namespace TankSurvival
             }
 
             // Get references to the components on the body
-            m_Movement = m_Instance.GetComponent<PlayerMovement> ();
+            m_Movement = m_Instance.GetComponent<PlayerMovement>();
             if (m_Movement == null)
             {
                 Debug.LogError("PlayerManager: Не найден компонент PlayerMovement на теле танка!");
@@ -85,45 +102,45 @@ namespace TankSurvival
         }
 
         // Used during the phases of the game where the player shouldn't be able to control their tank.
-        public void DisableControl ()
+        public void DisableControl()
         {
             if (m_Movement != null)
                 m_Movement.enabled = false;
             if (m_Shooting != null)
                 m_Shooting.enabled = false;
             if (m_CanvasGameObject != null)
-                m_CanvasGameObject.SetActive (false);
+                m_CanvasGameObject.SetActive(false);
         }
 
         // Used during the phases of the game where the player should be able to control their tank.
-        public void EnableControl ()
+        public void EnableControl()
         {
             if (m_Movement != null)
                 m_Movement.enabled = true;
             if (m_Shooting != null)
                 m_Shooting.enabled = true;
             if (m_CanvasGameObject != null)
-                m_CanvasGameObject.SetActive (true);
+                m_CanvasGameObject.SetActive(true);
         }
 
         // Used at the start of each round to put the tank into it's default state.
-        public void Reset ()
+        public void Reset()
         {
             m_Instance.transform.position = m_SpawnPoint.position;
             m_Instance.transform.rotation = m_SpawnPoint.rotation;
 
-            m_Instance.SetActive (false);
-            m_Instance.SetActive (true);
+            m_Instance.SetActive(false);
+            m_Instance.SetActive(true);
 
             if (m_TurretInstance != null)
             {
-                m_TurretInstance.SetActive (false);
-                m_TurretInstance.SetActive (true);
+                m_TurretInstance.SetActive(false);
+                m_TurretInstance.SetActive(true);
             }
         }
     }
     
-    #if UNITY_EDITOR
+#if UNITY_EDITOR
     [CustomPropertyDrawer(typeof(PlayerManager))]
     public class PlayerManagerDrawer : PropertyDrawer
     {
@@ -133,5 +150,5 @@ namespace TankSurvival
             return itemSlot;
         }
     }
-    #endif
+#endif
 }

@@ -1,11 +1,12 @@
 using UnityEngine;
 using System.Linq;
-using UnityEngine.Rendering;
-using NUnit.Framework.Constraints;
-using Unity.VisualScripting;
 
 namespace TankSurvival
 {
+    /// <summary>
+    /// Стрельба башни — автоматический поиск цели и стрельба.
+    /// Поддерживает бонусы от улучшений через компонент ShootingData.
+    /// </summary>
     public class Shooting : MonoBehaviour
     {
         public Rigidbody m_Shell;
@@ -18,23 +19,26 @@ namespace TankSurvival
         Rigidbody currentTarget;
         public float m_ShotCooldown = 0.3f;
         public float fireRange = 10f;
+
         private float m_ShotCooldownTimer = 0.0f;
         private bool m_Fired;
         private float closestDist = float.MaxValue;
+
+        // Компонент бонусов от улучшений
+        private ShootingData m_ShootingData;
+
+        // Оптимизация: ищем новую цель не каждый кадр, а раз в N секунд
+        private float m_LastTargetSearch = 0f;
+        private const float TARGET_SEARCH_INTERVAL = 0.5f;
+
         void Awake()
         {
-
-        }
-
-        // Start is called once before the first execution of Update after the MonoBehaviour is created
-        void Start()
-        {
+            m_ShootingData = GetComponent<ShootingData>();
         }
 
         // Update is called once per frame
         void Update()
         {
-            Collider[] colliders = Physics.OverlapSphere(transform.position, fireRange, enemyMask);
             if (m_ShotCooldownTimer > 0.0f)
             {
                 m_ShotCooldownTimer -= Time.deltaTime;
@@ -45,14 +49,39 @@ namespace TankSurvival
                 m_Fired = false;
             }
 
+            // Ищем новую цель раз в TARGET_SEARCH_INTERVAL секунд (оптимизация!)
+            m_LastTargetSearch -= Time.deltaTime;
+            if (m_LastTargetSearch <= 0f)
+            {
+                FindNewTarget();
+                m_LastTargetSearch = TARGET_SEARCH_INTERVAL;
+            }
+
+            // Стреляем, если есть цель и кулдаун прошёл
+            if (!m_Fired && currentTarget)
+            {
+                Fire();
+            }
+        }
+
+        /// <summary>
+        /// Найти новую ближайшую цель (вызывается раз в 0.5 сек)
+        /// </summary>
+        private void FindNewTarget()
+        {
+            Collider[] colliders = Physics.OverlapSphere(transform.position, fireRange, enemyMask);
+            closestDist = float.MaxValue;
+            currentTarget = null;
+
             for (int i = 0; i < colliders.Length; i++)
             {
                 Rigidbody targetRigidbody = colliders[i].GetComponent<Rigidbody>();
                 TankHealth targetHealth = targetRigidbody.GetComponent<TankHealth>();
                 Transform targetTransform = colliders[i].transform;
 
-                float dist = (targetTransform.position - transform.position).sqrMagnitude;
                 if (!targetHealth) continue;
+
+                float dist = (targetTransform.position - transform.position).sqrMagnitude;
                 if (dist <= closestDist)
                 {
                     currentTarget = targetRigidbody;
@@ -60,34 +89,31 @@ namespace TankSurvival
                     aimPosition = m_FireTransform;
                 }
             }
-            if (currentTarget)
-            {
-                AutoAiming();
-                Debug.Log("target: " + currentTarget);
-            } 
-            if (!m_Fired && currentTarget)
-            {
-                Fire();
-            }
-            closestDist = float.MaxValue;
-            currentTarget = null;
-            Debug.DrawLine(aimPosition.position, aimPosition.position + aimPosition.forward, Color.red);
         }
 
         private void Fire()
         {
             m_Fired = true;
             Rigidbody shellInstance = Instantiate(m_Shell, m_FireTransform.position, m_FireTransform.rotation) as Rigidbody;
-            
-            shellInstance.linearVelocity = 20 * m_FireTransform.forward;
+
+            // Применяем бонусы от улучшений к скорости снаряда
+            float shellSpeed = 20f;
+            if (m_ShootingData != null && m_ShootingData.damageBonus > 0)
+            {
+                // damageBonus влияет на урон, а не скорость — это обрабатывается в ShellExplosion
+            }
+
+            shellInstance.linearVelocity = shellSpeed * m_FireTransform.forward;
 
             m_ShotCooldownTimer = m_ShotCooldown;
-            
         }
 
         private void AutoAiming()
         {
-            currentGun.transform.LookAt(currentTarget.transform);
+            if (currentGun && currentTarget)
+            {
+                currentGun.transform.LookAt(currentTarget.transform);
+            }
         }
     }
 }

@@ -42,9 +42,11 @@ namespace TankSurvival
                 Destroy(m_ExplosionParticles.gameObject);
         }
 
-        private void OnEnable()
+        /// <summary>
+        /// Пересчитать здоровье и обновить UI (вызывается при спавне/респауне)
+        /// </summary>
+        public void ResetHealth()
         {
-            // When the tank is enabled, reset the tank's health and whether or not it's dead.
             m_CurrentHealth = m_StartingHealth;
             m_Dead = false;
             m_HasShield = false;
@@ -53,6 +55,11 @@ namespace TankSurvival
 
             // Update the health slider's value and color.
             SetHealthUI();
+        }
+
+        private void OnEnable()
+        {
+            ResetHealth();
         }
 
 
@@ -91,6 +98,30 @@ namespace TankSurvival
             }
 
             // Change the UI elements appropriately.
+            SetHealthUI();
+        }
+
+        /// <summary>
+        /// Увеличить максимальное здоровье, сохраняя текущий процент HP
+        /// </summary>
+        public void IncreaseMaxHealth(float amount)
+        {
+            if (amount <= 0) return;
+
+            // Сохраняем текущий процент здоровья
+            float healthPercentage = m_StartingHealth > 0 ? m_CurrentHealth / m_StartingHealth : 1f;
+
+            // Увеличиваем максимальное здоровье
+            m_StartingHealth += amount;
+
+            // Применяем тот же процент к новому максимуму
+            m_CurrentHealth = m_StartingHealth * healthPercentage;
+
+            // Ограничиваем, чтобы не превысить новый максимум
+            if (m_CurrentHealth > m_StartingHealth)
+                m_CurrentHealth = m_StartingHealth;
+
+            // Обновляем UI
             SetHealthUI();
         }
 

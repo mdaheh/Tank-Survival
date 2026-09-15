@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using TMPro;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -9,176 +10,362 @@ using UnityEngine.UI;
 
 namespace TankSurvival
 {
-    // This handle both the start menu (selecting which tank each player use) and the pause menu if present
+    /// <summary>
+    /// Обработчик UI — главное меню, выбор сложности, выбор частей танка, превью.
+    /// Интегрирован с системой прогресса и разблокировок.
+    /// </summary>
     public class GameUIHandler : MonoBehaviour
     {
-        public GameManager m_GameManager;               // Reference to the GameManager in the scene
-        [Header("Start Menu")] 
-        public RectTransform m_StartMenuRoot;           // The GameObject root that is parent of the Start Menu
-        public Button m_StartButton;                    // The Button that will start the game
-        public OnScreenButton m_PauseMenuButton;        // Reference to OnScreenButton that emulate pressing a Gamepad Start button
+        [Header("GameManager References")]
+        public GameManager m_GameManager;
+
+        [Header("Start Menu")]
+        public RectTransform m_StartMenuRoot;
+        public Button m_StartButton;
+        public OnScreenButton m_PauseMenuButton;
         public GameObject m_TankPreview;
-        private PauseMenu m_PauseMenu;                  // Reference to the pause menu (if present in the scene)
-        private InputAction m_PauseAction;              // The InputAction that will trigger the pause menu
+        private PauseMenu m_PauseMenu;
+        private InputAction m_PauseAction;
         private CanvasScaler m_CanvasScaler;
         private PlayerPreview m_PlayerPreview;
 
+        [Header("Difficulty Selection")]
+        public GameObject m_DifficultyPanel;
+        public Button[] m_DifficultyButtons;           // [0]=Easy, [1]=Medium, [2]=Hard
+        public TMPro.TMP_Text[] m_DifficultyNames;    // Текстовые метки сложностей
+        public TMPro.TMP_Text[] m_DifficultyLockText; // Текст "Заблокировано"
+
         [Header("Part Selection")]
-        public Dropdown m_ChassisDropdown;   // Ссылка на Dropdown для выбора шасси
-        public Dropdown m_TurretDropdown;    // Ссылка на Dropdown для выбора туррели
-        
-        // Массивы префабов, которые ты перетащишь в инспектор
-        public GameObject[] m_ChassisPrefabs; 
-        public GameObject[] m_TurretPrefabs;
-        
-        // Дефолтные префабы (используются, если ничего не выбрано или массив пуст)
+        public Dropdown m_ChassisDropdown;
+        public Dropdown m_TurretDropdown;
         public GameObject m_DefaultChassis;
         public GameObject m_DefaultTurret;
-        
-        // Ссылка на объект, в котором крутится превью
-        public GameObject m_PreviewContainer; 
 
+        [Header("Part Data (заполнить ScriptableObjects)")]
+        public List<ChassisData> chassisDataList;      // Все данные шасси
+        public List<TurretData> turretDataList;        // Все данные башен
+
+        [Header("UI Feedback")]
+        public TMPro.TMP_Text m_KillsRequiredText;   // Текст "Требуется убийств: X"
+
+        // --- Состояние ---
+        private PlayerProgress m_PlayerProgress;
         private int m_SelectedChassisIndex = 0;
         private int m_SelectedTurretIndex = 0;
+        private int m_SelectedDifficultyIndex = 0;
+        private List<Dropdown.OptionData> m_UnlockedChassisOptions = new();
+        private List<Dropdown.OptionData> m_UnlockedTurretOptions = new();
 
         private void Awake()
         {
-            // Получаем CanvasScaler
             m_CanvasScaler = GetComponentInParent<CanvasScaler>();
+            m_PlayerProgress = SaveSystem.Load();
         }
 
         private void Start()
         {
-            // Setup the Start button to StartGame when clicked
+            // Настройка кнопки старта
             m_StartButton.onClick.AddListener(StartGame);
-            // Disable the on screen pause button
-            m_PauseMenuButton.gameObject.SetActive(false);
-            
-            m_PlayerPreview = FindAnyObjectByType<PlayerPreview>(FindObjectsInactive.Include);
-            // tank preview
-            m_PlayerPreview.SetTankPreview(m_TankPreview);
 
-            // Pause Menu
+            // Отключаем кнопку паузы в меню
+            m_PauseMenuButton.gameObject.SetActive(false);
+
+            // Получаем превью
+            m_PlayerPreview = FindAnyObjectByType<PlayerPreview>(FindObjectsInactive.Include);
+            if (m_PlayerPreview != null)
+                m_PlayerPreview.SetTankPreview(m_TankPreview);
+
+            // Настройка паузы
             m_PauseMenu = FindAnyObjectByType<PauseMenu>(FindObjectsInactive.Include);
             if (m_PauseMenu != null)
             {
                 m_PauseMenu.Init();
-                //clone the action so it doesn't change the default one
                 m_PauseAction = InputSystem.actions.FindAction("Pause").Clone();
                 var rectTransform = m_PauseMenuButton.GetComponent<RectTransform>();
-                //force the button to be on top of everything so it can be clicked no matter what other screen is shown 
                 rectTransform.SetAsLastSibling();
             }
 
-            // Setup dropdowns if they exist
-            if (m_ChassisDropdown != null && m_ChassisPrefabs != null && m_ChassisPrefabs.Length > 0)
-            {
-                SetupDropdown(m_ChassisDropdown, m_ChassisPrefabs);
-                m_SelectedChassisIndex = m_ChassisDropdown.value;
-                m_ChassisDropdown.onValueChanged.AddListener(index => { m_SelectedChassisIndex = index; UpdatePreview(); });
-            }
+            // Настройка сложности
+            SetupDifficultySelection();
 
-            if (m_TurretDropdown != null && m_TurretPrefabs != null && m_TurretPrefabs.Length > 0)
-            {
-                SetupDropdown(m_TurretDropdown, m_TurretPrefabs);
-                m_SelectedTurretIndex = m_TurretDropdown.value;
-                m_TurretDropdown.onValueChanged.AddListener(index => { m_SelectedTurretIndex = index; UpdatePreview(); });
-            }
+            // Настройка выбора частей (с учётом разблокировок)
+            SetupPartSelection();
 
-            // Initial preview setup
+            // Начальное превью
             UpdatePreview();
         }
 
+        /// <summary>
+        /// Настройка выбора сложности с разблокировками
+        /// </summary>
+        private void SetupDifficultySelection()
+        {
+            if (m_DifficultyPanel == null)
+                return;
+
+            // Показываем/скрываем панель сложности
+            m_DifficultyPanel.SetActive(true);
+
+            // Настройка каждой сложности
+            for (int i = 0; i < m_DifficultyButtons.Length && i < m_DifficultyNames.Length; i++)
+            {
+                bool isUnlocked = m_PlayerProgress.IsDifficultyUnlocked(i);
+
+                // Обновляем текст
+                if (m_DifficultyNames[i] != null)
+                {
+                    string difficultyName = i == 0 ? "Лёгкий" : i == 1 ? "Средний" : "Тяжёлый";
+                    m_DifficultyNames[i].text = difficultyName;
+                }
+
+                // Показываем/скрываем замок
+                if (m_DifficultyLockText[i] != null)
+                {
+                    m_DifficultyLockText[i].gameObject.SetActive(!isUnlocked);
+                }
+
+                // Включаем/отключаем кнопку
+                m_DifficultyButtons[i].interactable = isUnlocked;
+
+                // Подписываемся на клик
+                int index = i;
+                m_DifficultyButtons[i].onClick.AddListener(() => SelectDifficulty(index));
+            }
+
+            // Автоматически выбираем первую доступную сложность
+            for (int i = 0; i < m_DifficultyButtons.Length; i++)
+            {
+                if (m_PlayerProgress.IsDifficultyUnlocked(i))
+                {
+                    SelectDifficulty(i);
+                    break;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Выбрать сложность
+        /// </summary>
+        private void SelectDifficulty(int index)
+        {
+            if (!m_PlayerProgress.IsDifficultyUnlocked(index))
+                return;
+
+            m_SelectedDifficultyIndex = index;
+            Debug.Log($"[GameUIHandler] Выбрана сложность: {index}");
+
+            // Скрываем панель сложности после выбора
+            if (m_DifficultyPanel != null)
+                m_DifficultyPanel.SetActive(false);
+        }
+
+        /// <summary>
+        /// Настройка выбора частей с учётом разблокировок
+        /// </summary>
+        private void SetupPartSelection()
+        {
+            // Заполняем списки разблокированных частей
+            m_UnlockedChassisOptions.Clear();
+            m_UnlockedTurretOptions.Clear();
+
+            for (int i = 0; i < chassisDataList.Count; i++)
+            {
+                var chassis = chassisDataList[i];
+                bool isUnlocked = m_PlayerProgress.IsChassisUnlocked(chassis.id) ||
+                                  chassis.killsRequired == 0;
+
+                if (isUnlocked)
+                {
+                    m_UnlockedChassisOptions.Add(new Dropdown.OptionData { text = chassis.displayName });
+                }
+            }
+
+            for (int i = 0; i < turretDataList.Count; i++)
+            {
+                var turret = turretDataList[i];
+                bool isUnlocked = m_PlayerProgress.IsTurretUnlocked(turret.id) ||
+                                  turret.killsRequired == 0;
+
+                if (isUnlocked)
+                {
+                    m_UnlockedTurretOptions.Add(new Dropdown.OptionData { text = turret.displayName });
+                }
+            }
+
+            // Настройка дропдаунов
+            if (m_ChassisDropdown != null && m_UnlockedChassisOptions.Count > 0)
+            {
+                m_ChassisDropdown.ClearOptions();
+                m_ChassisDropdown.AddOptions(m_UnlockedChassisOptions);
+                m_ChassisDropdown.value = 0;
+                m_SelectedChassisIndex = 0;
+                m_ChassisDropdown.onValueChanged.AddListener(index =>
+                {
+                    m_SelectedChassisIndex = index;
+                    UpdatePreview();
+                    UpdateKillsRequiredText();
+                });
+            }
+
+            if (m_TurretDropdown != null && m_UnlockedTurretOptions.Count > 0)
+            {
+                m_TurretDropdown.ClearOptions();
+                m_TurretDropdown.AddOptions(m_UnlockedTurretOptions);
+                m_TurretDropdown.value = 0;
+                m_SelectedTurretIndex = 0;
+                m_TurretDropdown.onValueChanged.AddListener(index =>
+                {
+                    m_SelectedTurretIndex = index;
+                    UpdatePreview();
+                    UpdateKillsRequiredText();
+                });
+            }
+
+            // Обновляем текст требований
+            UpdateKillsRequiredText();
+        }
+
+        /// <summary>
+        /// Обновить текст требований к убийствам
+        /// </summary>
+        private void UpdateKillsRequiredText()
+        {
+            if (m_KillsRequiredText == null)
+                return;
+
+            // Находим выбранные части
+            ChassisData selectedChassis = null;
+            TurretData selectedTurret = null;
+
+            if (m_ChassisDropdown != null && m_ChassisDropdown.value < m_UnlockedChassisOptions.Count)
+            {
+                // Ищем ChassisData по имени из dropdown
+                string chassisName = m_UnlockedChassisOptions[m_ChassisDropdown.value].text;
+                selectedChassis = chassisDataList.Find(c => c.displayName == chassisName);
+            }
+
+            if (m_TurretDropdown != null && m_TurretDropdown.value < m_UnlockedTurretOptions.Count)
+            {
+                string turretName = m_UnlockedTurretOptions[m_TurretDropdown.value].text;
+                selectedTurret = turretDataList.Find(t => t.displayName == turretName);
+            }
+
+            // Показываем требования
+            string text = "";
+            if (selectedChassis != null && selectedChassis.killsRequired > 0)
+                text += $"Шасси: {selectedChassis.killsRequired} убийств. ";
+            if (selectedTurret != null && selectedTurret.killsRequired > 0)
+                text += $"Башня: {selectedTurret.killsRequired} убийств.";
+
+            m_KillsRequiredText.text = text;
+        }
+
+        /// <summary>
+        /// Начать игру
+        /// </summary>
         void StartGame()
         {
-            // When starting the game, we disable the Start Menu
+            // Отключаем меню
             m_StartMenuRoot.gameObject.SetActive(false);
 
-            // PlayerData is a structure that allow to pass info between the menu and the GameManager
+            // Получаем выбранные данные частей
+            ChassisData selectedChassis = GetSelectedChassisData();
+            TurretData selectedTurret = GetSelectedTurretData();
+
+            // Создаём PlayerData
             GameManager.PlayerData playerData = new GameManager.PlayerData()
             {
-                ChassisPrefab = (m_ChassisPrefabs != null && m_SelectedChassisIndex < m_ChassisPrefabs.Length) 
-                    ? m_ChassisPrefabs[m_SelectedChassisIndex] 
-                    : null,
-                TurretPrefab = (m_TurretPrefabs != null && m_SelectedTurretIndex < m_TurretPrefabs.Length) 
-                    ? m_TurretPrefabs[m_SelectedTurretIndex] 
-                    : null
+                chassisId = selectedChassis ? selectedChassis.id : 0,
+                turretId = selectedTurret ? selectedTurret.id : 0,
+                chassisPrefab = selectedChassis ? selectedChassis.prefab : null,
+                turretPrefab = selectedTurret ? selectedTurret.prefab : null,
+                difficultyIndex = m_SelectedDifficultyIndex
             };
 
-            m_GameManager.StartGame(playerData);
+            // Запускаем игру через GameManager
+            if (m_GameManager != null)
+            {
+                m_GameManager.StartGameFromMenu(playerData);
+            }
+            else
+            {
+                Debug.LogError("[GameUIHandler] GameManager не назначен!");
+            }
 
-            // If there is a pause menu, we re-enable the on screen pause button and listen to the pause action to
-            // display the pause menu when pressed
+            // Включаем кнопку паузы
             if (m_PauseMenu != null)
             {
                 m_PauseAction.performed += evt => { TogglePause(); };
                 m_PauseAction.Enable();
-                
                 m_PauseMenuButton.gameObject.SetActive(true);
             }
         }
-        
+
+        /// <summary>
+        /// Получить данные выбранного шасси
+        /// </summary>
+        private ChassisData GetSelectedChassisData()
+        {
+            if (m_ChassisDropdown == null || m_ChassisDropdown.value >= m_UnlockedChassisOptions.Count)
+                return null;
+
+            string chassisName = m_UnlockedChassisOptions[m_ChassisDropdown.value].text;
+            return chassisDataList.Find(c => c.displayName == chassisName);
+        }
+
+        /// <summary>
+        /// Получить данные выбранной башни
+        /// </summary>
+        private TurretData GetSelectedTurretData()
+        {
+            if (m_TurretDropdown == null || m_TurretDropdown.value >= m_UnlockedTurretOptions.Count)
+                return null;
+
+            string turretName = m_UnlockedTurretOptions[m_TurretDropdown.value].text;
+            return turretDataList.Find(t => t.displayName == turretName);
+        }
+
+        /// <summary>
+        /// Получить префаб выбранного шасси
+        /// </summary>
+        private GameObject GetSelectedChassisPrefab()
+        {
+            var data = GetSelectedChassisData();
+            return data ? data.prefab : m_DefaultChassis;
+        }
+
+        /// <summary>
+        /// Получить префаб выбранной башни
+        /// </summary>
+        private GameObject GetSelectedTurretPrefab()
+        {
+            var data = GetSelectedTurretData();
+            return data ? data.prefab : m_DefaultTurret;
+        }
+
         private void TogglePause()
         {
-            m_PauseMenu.TogglePause();
+            if (m_PauseMenu != null)
+                m_PauseMenu.TogglePause();
         }
 
         private void Update()
         {
-            // This help keeping the UI readable in both portrait and landscape mode (game should only be played in landscape
-            // but Unity Play cannot enforce an orientation so we need it to be readable even in portrait)
+            // Адаптивный Canvas
             float ratio = Screen.width / (float)Screen.height;
             m_CanvasScaler.matchWidthOrHeight = ratio > 1.0f ? 1.0f : 0.0f;
         }
 
         /// <summary>
-        /// Populate a Dropdown with names from an array of GameObjects
-        /// </summary>
-        private void SetupDropdown(Dropdown dropdown, GameObject[] prefabs)
-        {
-            dropdown.ClearOptions();
-            List<string> options = new List<string>();
-            for (int i = 0; i < prefabs.Length; i++)
-            {
-                if (prefabs[i] != null)
-                {
-                    options.Add(prefabs[i].name);
-                }
-            }
-            dropdown.AddOptions(options);
-            dropdown.value = 0;
-        }
-
-        /// <summary>
-        /// Update the preview with currently selected chassis and turret.
-        /// Falls back to default prefabs if nothing is selected or arrays are empty.
+        /// Обновить превью танка
         /// </summary>
         private void UpdatePreview()
         {
             if (m_PlayerPreview == null)
                 return;
 
-            // Resolve selected chassis (use default if array is empty or index out of range)
-            GameObject selectedChassis = null;
-            if (m_ChassisPrefabs != null && m_SelectedChassisIndex >= 0 && m_SelectedChassisIndex < m_ChassisPrefabs.Length)
-            {
-                selectedChassis = m_ChassisPrefabs[m_SelectedChassisIndex];
-            }
-            if (selectedChassis == null)
-            {
-                selectedChassis = m_DefaultChassis;
-            }
-
-            // Resolve selected turret
-            GameObject selectedTurret = null;
-            if (m_TurretPrefabs != null && m_SelectedTurretIndex >= 0 && m_SelectedTurretIndex < m_TurretPrefabs.Length)
-            {
-                selectedTurret = m_TurretPrefabs[m_SelectedTurretIndex];
-            }
-            if (selectedTurret == null)
-            {
-                selectedTurret = m_DefaultTurret;
-            }
+            GameObject selectedChassis = GetSelectedChassisPrefab();
+            GameObject selectedTurret = GetSelectedTurretPrefab();
 
             m_PlayerPreview.SetTankPreview(selectedChassis, selectedTurret);
         }

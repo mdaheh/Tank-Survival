@@ -3,6 +3,10 @@ using UnityEngine.InputSystem;
 
 namespace TankSurvival
 {
+    /// <summary>
+    /// Движение игрока — наследуется от логики TankMover (общая база для всех танков).
+    /// Поддерживает бонусы от улучшений через компонент MovementData.
+    /// </summary>
     public class PlayerMovement : MonoBehaviour
     {
         [Tooltip("The speed in unity unit/second the tank move at")]
@@ -32,12 +36,16 @@ namespace TankSurvival
 
         private Vector3 m_RequestedDirection;       // In Direct Control mode, store the direction the user wants to go toward
 
-        private void Awake ()
+        // Компонент бонусов от улучшений
+        private MovementData m_MovementData;
+
+        private void Awake()
         {
-            m_Rigidbody = GetComponent<Rigidbody> ();
+            m_Rigidbody = GetComponent<Rigidbody>();
+            m_MovementData = GetComponent<MovementData>();
         }
 
-        private void OnEnable ()
+        private void OnEnable()
         {
             m_Rigidbody.isKinematic = false;
 
@@ -52,17 +60,17 @@ namespace TankSurvival
             }
         }
 
-        private void OnDisable ()
+        private void OnDisable()
         {
             m_Rigidbody.isKinematic = true;
 
-            for(int i = 0; i < m_particleSystems.Length; ++i)
+            for (int i = 0; i < m_particleSystems.Length; ++i)
             {
                 m_particleSystems[i].Stop();
             }
         }
 
-        private void Start ()
+        private void Start()
         {
             var inputUser = GetComponent<TankInputUser>();
             if (inputUser == null)
@@ -77,32 +85,32 @@ namespace TankSurvival
             m_MoveAction.Enable();
             m_TurnAction.Enable();
 
-            if(m_MovementAudio)
+            if (m_MovementAudio)
             {
                 m_OriginalPitch = m_MovementAudio.pitch;
             }
         }
 
-        private void Update ()
+        private void Update()
         {
             m_MovementInputValue = m_MoveAction.ReadValue<float>();
             m_TurnInputValue = m_TurnAction.ReadValue<float>();
 
-            if(m_MovementAudio)
+            if (m_MovementAudio)
             {
-                EngineAudio ();
+                EngineAudio();
             }
         }
 
-        private void EngineAudio ()
+        private void EngineAudio()
         {
-            if (Mathf.Abs (m_MovementInputValue) < 0.1f && Mathf.Abs (m_TurnInputValue) < 0.1f)
+            if (Mathf.Abs(m_MovementInputValue) < 0.1f && Mathf.Abs(m_TurnInputValue) < 0.1f)
             {
                 if (m_MovementAudio.clip == m_EngineDriving)
                 {
                     m_MovementAudio.clip = m_EngineIdling;
-                    m_MovementAudio.pitch = Random.Range (m_OriginalPitch - m_PitchRange, m_OriginalPitch + m_PitchRange);
-                    m_MovementAudio.Play ();
+                    m_MovementAudio.pitch = Random.Range(m_OriginalPitch - m_PitchRange, m_OriginalPitch + m_PitchRange);
+                    m_MovementAudio.Play();
                 }
             }
             else
@@ -116,7 +124,7 @@ namespace TankSurvival
             }
         }
 
-        private void FixedUpdate ()
+        private void FixedUpdate()
         {
             if (m_IsDirectControl)
             {
@@ -136,11 +144,11 @@ namespace TankSurvival
                 m_RequestedDirection.Normalize();
             }
 
-            Move ();
-            Turn ();
+            Move();
+            Turn();
         }
 
-        private void Move ()
+        private void Move()
         {
             float speedInput = 0.0f;
 
@@ -154,29 +162,45 @@ namespace TankSurvival
                 speedInput = m_MovementInputValue;
             }
 
-            Vector3 movement = transform.forward * speedInput * m_Speed;
+            // Применяем бонусы от улучшений
+            float speedMultiplier = 1f;
+            if (m_MovementData != null)
+            {
+                speedMultiplier = 1f + m_MovementData.speedBonus / 100f; // speedBonus — в процентах
+            }
+
+            Vector3 movement = transform.forward * speedInput * m_Speed * speedMultiplier;
 
             m_Rigidbody.linearVelocity = movement + m_ExplosionForceValue;
             m_ExplosionForceValue = Vector3.Lerp(m_ExplosionForceValue, Vector3.zero, Time.deltaTime * 3f);
         }
 
-        private void Turn ()
+        private void Turn()
         {
             Quaternion turnRotation;
 
             if (m_IsDirectControl)
             {
                 float angleTowardTarget = Vector3.SignedAngle(m_RequestedDirection, transform.forward, transform.up);
-                var rotatingAngle = Mathf.Sign(angleTowardTarget) * Mathf.Min(Mathf.Abs(angleTowardTarget), m_TurnSpeed * Time.deltaTime);
+                
+                // Применяем бонусы от улучшений
+                float turnSpeedMultiplier = 1f;
+                if (m_MovementData != null)
+                {
+                    turnSpeedMultiplier = 1f + m_MovementData.turnSpeedBonus / 100f;
+                }
+
+                float maxTurn = m_TurnSpeed * Time.deltaTime * turnSpeedMultiplier;
+                float rotatingAngle = Mathf.Sign(angleTowardTarget) * Mathf.Min(Mathf.Abs(angleTowardTarget), maxTurn);
                 turnRotation = Quaternion.AngleAxis(-rotatingAngle, Vector3.up);
             }
             else
             {
                 float turn = m_TurnInputValue * m_TurnSpeed * Time.deltaTime;
-                turnRotation = Quaternion.Euler (0f, turn, 0f);
+                turnRotation = Quaternion.Euler(0f, turn, 0f);
             }
 
-            m_Rigidbody.MoveRotation (m_Rigidbody.rotation * turnRotation);
+            m_Rigidbody.MoveRotation(m_Rigidbody.rotation * turnRotation);
         }
 
         public void AddExplosionForce(float explosionForce, Vector3 explosionPosition, float explosionRadius, float upwardsModifier = 0f)

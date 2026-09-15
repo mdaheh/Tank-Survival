@@ -7,6 +7,10 @@ using Random = UnityEngine.Random;
 
 namespace TankSurvival
 {
+    /// <summary>
+    /// ИИ врага — использует NavMesh для поиска пути к игроку.
+    /// Периодически пересчитывает путь и выбирает ближайшую цель.
+    /// </summary>
     public class EnemyAI : MonoBehaviour
     {
         public GameObject playerObject;
@@ -23,6 +27,7 @@ namespace TankSurvival
         {
             if (!isActiveAndEnabled)
                 return;
+            
             m_Movement = GetComponent<EnemyMovement>();
 
             // to avoid all computer controlled tank pathfinding together (and taxing the CPU), AI tank have a random
@@ -33,8 +38,6 @@ namespace TankSurvival
             // empty scene where no GameManager was added yet.
             m_AllTanks = FindObjectsByType<EnemyMovement>(FindObjectsInactive.Exclude).Select(t => t.gameObject).ToArray();
         }
-        // If a GameManager exist, it will call this function after creating a computer controlled tank. This just replace
-        // the list of tanks with the one from the GameManager
 
         public void TurnOff()
         {
@@ -61,20 +64,8 @@ namespace TankSurvival
                 // This will store each path toward each tank in the scene
                 NavMeshPath[] paths = new NavMeshPath[m_AllTanks.Length];
 
-
-                //---------------------------------
-                // NavMeshPath playerPath = new NavMeshPath();
-
-                // if (playerObject != null || playerObject.activeInHierarchy)
-                // {
-                //     Transform playerTarget = playerObject.transform;
-                
-                // }
-
-                //---------------------------------
-
-                // Initialize the shorted path length to the max value a float can have, so no matter what is the length
-                // of the first found path, it will for sure be shortest than this initial value
+                // Initialize the shortest path length to the max value a float can have, so no matter what is the length
+                // of the first found path, it will for sure be shorter than this initial value
                 float shortestPath = float.MaxValue;
                 // which of the path in the paths array we use. By default none, which is represented by -1 here.
                 int usedPath = -1;
@@ -85,7 +76,7 @@ namespace TankSurvival
                 {
                     var tank = m_AllTanks[i].gameObject;
 
-                    //we don't want the tank to try to target itself, so ignore itself
+                    // we don't want the tank to try to target itself, so ignore itself
                     if (tank == gameObject)
                         continue;
 
@@ -94,21 +85,23 @@ namespace TankSurvival
                         continue;
 
                     paths[i] = new NavMeshPath();
-                    if(tank.GetComponent<Shooting>()) //ГОВНОКОД ЧТОБЫ СДЕЛАТЬ ЦЕЛЬЮ ТОЛЬКО ИГРОКА
+                    
+                    // Ищем только игрока (у игрока есть компонент Shooting)
+                    if (tank.GetComponent<Shooting>())
                     {
-                        // this return true if a path was found
+                        // this returns true if a path was found
                         if (NavMesh.CalculatePath(transform.position, tank.transform.position, ~0, paths[i]))
                         {
                             // Compute how long the path is...
                             float length = GetPathLength(paths[i]);
+                            
                             // And if it's the shortest path so far, this is the one we want to go after
                             if (shortestPath > length)
                             {
-                                // so this path become the used path
+                                // so this path becomes the used path
                                 usedPath = i;
-                                //and its length is now the shortest length to beat
+                                // and its length is now the shortest length to beat
                                 shortestPath = length;
-                                //target = tank.transform;
                                 target = playerObject.transform;
                             }
                         }
@@ -119,7 +112,7 @@ namespace TankSurvival
                 if (usedPath != -1)
                 {
                     // we switched target. The last tank we were seeking got farther away than another tank, this new
-                    // tank become our new target, and we reset the last position as this is now a new target
+                    // tank becomes our new target, and we reset the last position as this is now a new target
                     if (target != m_CurrentTarget)
                     {
                         m_CurrentTarget = target;
@@ -129,10 +122,7 @@ namespace TankSurvival
                     m_CurrentTarget = target;
                     m_CurrentPath = paths[usedPath];
                     m_CurrentCorner = 1;
-                    //m_IsMoving = true;
                 }
-
-
             }
         }
 
@@ -142,7 +132,7 @@ namespace TankSurvival
         private void FixedUpdate()
         {
             // If the tank doesn't have a path currently, exit early.
-            if(m_CurrentPath == null || m_CurrentPath.corners.Length == 0)
+            if (m_CurrentPath == null || m_CurrentPath.corners.Length == 0)
                 return;
             
             var rb = m_Movement.Rigidbody;

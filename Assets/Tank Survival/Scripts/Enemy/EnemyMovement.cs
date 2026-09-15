@@ -2,6 +2,10 @@ using UnityEngine;
 
 namespace TankSurvival
 {
+    /// <summary>
+    /// Движение врага — общая логика для всех вражеских танков.
+    /// Использует NavMesh для поиска пути к игроку.
+    /// </summary>
     public class EnemyMovement : MonoBehaviour
     {
         [Tooltip("The speed in unity unit/second the tank move at")]
@@ -22,12 +26,12 @@ namespace TankSurvival
         private float m_MovementInputValue;         // Simulated movement input for engine audio
         private float m_TurnInputValue;             // Simulated turn input for engine audio
 
-        private void Awake ()
+        private void Awake()
         {
-            m_Rigidbody = GetComponent<Rigidbody> ();
+            m_Rigidbody = GetComponent<Rigidbody>();
         }
 
-        private void OnEnable ()
+        private void OnEnable()
         {
             m_Rigidbody.isKinematic = false;
 
@@ -42,41 +46,41 @@ namespace TankSurvival
             }
         }
 
-        private void OnDisable ()
+        private void OnDisable()
         {
             m_Rigidbody.isKinematic = true;
 
-            for(int i = 0; i < m_particleSystems.Length; ++i)
+            for (int i = 0; i < m_particleSystems.Length; ++i)
             {
                 m_particleSystems[i].Stop();
             }
         }
 
-        private void Start ()
+        private void Start()
         {
-            if(m_MovementAudio)
+            if (m_MovementAudio)
             {
                 m_OriginalPitch = m_MovementAudio.pitch;
             }
         }
 
-        private void Update ()
+        private void Update()
         {
-            if(m_MovementAudio)
+            if (m_MovementAudio)
             {
-                EngineAudio ();
+                EngineAudio();
             }
         }
 
-        private void EngineAudio ()
+        private void EngineAudio()
         {
-            if (Mathf.Abs (m_MovementInputValue) < 0.1f && Mathf.Abs (m_TurnInputValue) < 0.1f)
+            if (Mathf.Abs(m_MovementInputValue) < 0.1f && Mathf.Abs(m_TurnInputValue) < 0.1f)
             {
                 if (m_MovementAudio.clip == m_EngineDriving)
                 {
                     m_MovementAudio.clip = m_EngineIdling;
-                    m_MovementAudio.pitch = Random.Range (m_OriginalPitch - m_PitchRange, m_OriginalPitch + m_PitchRange);
-                    m_MovementAudio.Play ();
+                    m_MovementAudio.pitch = Random.Range(m_OriginalPitch - m_PitchRange, m_OriginalPitch + m_PitchRange);
+                    m_MovementAudio.Play();
                 }
             }
             else
@@ -121,8 +125,8 @@ namespace TankSurvival
         {
             if (Mathf.Abs(angle) > 0.000001f)
             {
-                Quaternion turnRotation = Quaternion.Euler (0f, angle, 0f);
-                m_Rigidbody.MoveRotation (m_Rigidbody.rotation * turnRotation);
+                Quaternion turnRotation = Quaternion.Euler(0f, angle, 0f);
+                m_Rigidbody.MoveRotation(m_Rigidbody.rotation * turnRotation);
             }
         }
 
@@ -143,7 +147,7 @@ namespace TankSurvival
             if (Mathf.Abs(rotatingAngle) > 0.000001f)
             {
                 Quaternion turnRotation = Quaternion.AngleAxis(-rotatingAngle, Vector3.up);
-                m_Rigidbody.MoveRotation (m_Rigidbody.rotation * turnRotation);
+                m_Rigidbody.MoveRotation(m_Rigidbody.rotation * turnRotation);
             }
         }
 
