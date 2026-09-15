@@ -3,174 +3,130 @@ using UnityEngine;
 namespace TankSurvival
 {
     /// <summary>
-    /// Движение врага — общая логика для всех вражеских танков.
-    /// Использует NavMesh для поиска пути к игроку.
+    /// Простое преследование игрока с учётом коллизий.
+    /// Враг идёт по прямой к игроку. При столкновении с препятствием
+    /// Rigidbody автоматически скользит вдоль него — без дополнительного кода.
+    /// 
+    /// Враги сталкиваются друг с другом, создавая "пробки" в узких местах.
+    /// Подходит для браузерных игр — минимальная нагрузка на CPU.
     /// </summary>
     public class EnemyMovement : MonoBehaviour
     {
-        [Tooltip("The speed in unity unit/second the tank move at")]
-        public float m_Speed = 12f;                 // How fast the tank moves forward and back.
-        [Tooltip("The speed in deg/s that tank will rotate at")]
-        public float m_TurnSpeed = 180f;            // How fast the tank turns in degrees per second.
-        public AudioSource m_MovementAudio;         // Reference to the audio source used to play engine sounds. NB: different to the shooting audio source.
-        public AudioClip m_EngineIdling;            // Audio to play when the tank isn't moving.
-        public AudioClip m_EngineDriving;           // Audio to play when the tank is moving.
-        public float m_PitchRange = 0.2f;           // The amount by which the pitch of the engine noises can vary.
+        [Header("Movement Settings")]
+        public float m_Speed = 12f;                 // Скорость движения
+        public float m_TurnSpeed = 180f;            // Скорость поворота (град/сек)
+        public float m_PathfindInterval = 0.5f;     // Как часто пересчитывать направление (сек)
 
-        public Rigidbody Rigidbody => m_Rigidbody;
+        [Header("References")]
+        public Transform m_Player;                  // Ссылка на игрока
 
-        private Rigidbody m_Rigidbody;              // Reference used to move the tank.
-        private Vector3 m_ExplosionForceValue;      // The current force applied on the tank from an explosion.
-        private float m_OriginalPitch;              // The pitch of the audio source at the start of the scene.
-        private ParticleSystem[] m_particleSystems; // References to all the particle systems used by the Tank
-        private float m_MovementInputValue;         // Simulated movement input for engine audio
-        private float m_TurnInputValue;             // Simulated turn input for engine audio
+        private Rigidbody m_Rigidbody;
+        private float m_PathfindTimer;
 
         private void Awake()
         {
             m_Rigidbody = GetComponent<Rigidbody>();
-        }
-
-        private void OnEnable()
-        {
-            m_Rigidbody.isKinematic = false;
-
-            m_MovementInputValue = 0f;
-            m_TurnInputValue = 0f;
-            m_ExplosionForceValue = Vector3.zero;
-
-            m_particleSystems = GetComponentsInChildren<ParticleSystem>();
-            for (int i = 0; i < m_particleSystems.Length; ++i)
-            {
-                m_particleSystems[i].Play();
-            }
-        }
-
-        private void OnDisable()
-        {
-            m_Rigidbody.isKinematic = true;
-
-            for (int i = 0; i < m_particleSystems.Length; ++i)
-            {
-                m_particleSystems[i].Stop();
-            }
-        }
-
-        private void Start()
-        {
-            if (m_MovementAudio)
-            {
-                m_OriginalPitch = m_MovementAudio.pitch;
-            }
+            
+            // Ключевая настройка для скольжения вдоль стен:
+            // Interpolate — сглаживает физику между кадрами
+            m_Rigidbody.interpolation = RigidbodyInterpolation.Interpolate;
+            
+            // Continuous Dynamic — предотвращает прохождение сквозь объекты
+            // при высокой скорости (важно для браузерной игры)
+            m_Rigidbody.collisionDetectionMode = CollisionDetectionMode.Continuous;
         }
 
         private void Update()
         {
-            if (m_MovementAudio)
+            // Пересчитываем направление к игроку не каждый кадр, а раз в m_PathfindInterval
+            m_PathfindTimer += Time.deltaTime;
+            if (m_PathfindTimer >= m_PathfindInterval)
             {
-                EngineAudio();
-            }
-        }
-
-        private void EngineAudio()
-        {
-            if (Mathf.Abs(m_MovementInputValue) < 0.1f && Mathf.Abs(m_TurnInputValue) < 0.1f)
-            {
-                if (m_MovementAudio.clip == m_EngineDriving)
-                {
-                    m_MovementAudio.clip = m_EngineIdling;
-                    m_MovementAudio.pitch = Random.Range(m_OriginalPitch - m_PitchRange, m_OriginalPitch + m_PitchRange);
-                    m_MovementAudio.Play();
-                }
-            }
-            else
-            {
-                if (m_MovementAudio.clip == m_EngineIdling)
-                {
-                    m_MovementAudio.clip = m_EngineDriving;
-                    m_MovementAudio.pitch = Random.Range(m_OriginalPitch - m_PitchRange, m_OriginalPitch + m_PitchRange);
-                    m_MovementAudio.Play();
-                }
+                MoveTowardPlayer();
+                m_PathfindTimer = 0f;
             }
         }
 
         /// <summary>
-        /// Call this to set the movement input for engine audio feedback
+        /// Двигаться к игроку. При столкновении с коллайдером
+        /// Rigidbody автоматически скользит вдоль преграды.
+        /// Враги сталкиваются друг с другом, создавая "пробки".
         /// </summary>
-        public void SetMovementInput(float movementInput, float turnInput)
+        private void MoveTowardPlayer()
         {
-            m_MovementInputValue = movementInput;
-            m_TurnInputValue = turnInput;
+            if (m_Player == null)
+                return;
+
+            // Вектор к игроку
+            Vector3 direction = m_Player.position - transform.position;
+            direction.y = 0; // Игнорируем высоту — враги не летают
+
+            float distance = direction.magnitude;
+            if (distance < 0.5f)
+                return; // Уже слишком близко
+
+            direction.Normalize();
+
+            // Поворачиваемся к игроку
+            TurnToward(direction);
+
+            // Двигаемся вперёд.
+            // При столкновении с коллайдером Rigidbody сам скользит вдоль стены
+            // Благодаря настройкам физики (не нужно писать обходной код).
+            // Враги сталкиваются друг с другом — создаются "пробки" в узких местах.
+            m_Rigidbody.linearVelocity = transform.forward * m_Speed;
         }
 
         /// <summary>
-        /// Move the tank forward based on speed and time
+        /// Повернуть к направлению direction
         /// </summary>
-        public void Move(float speedMultiplier = 1f)
-        {
-            float speedInput = m_MovementInputValue;
-            if (speedInput == 0f)
-                speedInput = 1f;
-
-            Vector3 movement = transform.forward * speedInput * m_Speed * speedMultiplier;
-
-            m_Rigidbody.linearVelocity = movement + m_ExplosionForceValue;
-            m_ExplosionForceValue = Vector3.Lerp(m_ExplosionForceValue, Vector3.zero, Time.deltaTime * 3f);
-        }
-
-        /// <summary>
-        /// Rotate the tank by the given angle in degrees
-        /// </summary>
-        public void Turn(float angle)
-        {
-            if (Mathf.Abs(angle) > 0.000001f)
-            {
-                Quaternion turnRotation = Quaternion.Euler(0f, angle, 0f);
-                m_Rigidbody.MoveRotation(m_Rigidbody.rotation * turnRotation);
-            }
-        }
-
-        /// <summary>
-        /// Rotate the tank toward a target direction
-        /// </summary>
-        public void TurnToward(Vector3 direction, float speedMultiplier = 1f)
+        private void TurnToward(Vector3 direction)
         {
             direction.y = 0;
             direction.Normalize();
 
             Vector3 forward = transform.forward;
-            float rotatingAngle = Vector3.SignedAngle(direction, forward, Vector3.up);
+            float angle = Vector3.SignedAngle(direction, forward, Vector3.up);
 
-            float maxTurn = m_TurnSpeed * Time.deltaTime * speedMultiplier;
-            rotatingAngle = Mathf.Sign(rotatingAngle) * Mathf.Min(Mathf.Abs(rotatingAngle), maxTurn);
+            float maxTurn = m_TurnSpeed * Time.deltaTime;
+            angle = Mathf.Sign(angle) * Mathf.Min(Mathf.Abs(angle), maxTurn);
 
-            if (Mathf.Abs(rotatingAngle) > 0.000001f)
+            if (Mathf.Abs(angle) > 0.001f)
             {
-                Quaternion turnRotation = Quaternion.AngleAxis(-rotatingAngle, Vector3.up);
+                Quaternion turnRotation = Quaternion.AngleAxis(-angle, Vector3.up);
                 m_Rigidbody.MoveRotation(m_Rigidbody.rotation * turnRotation);
             }
         }
 
+        /// <summary>
+        /// Обновить ссылку на игрока (вызывается при спавне врага)
+        /// </summary>
+        public void SetPlayer(Transform player)
+        {
+            m_Player = player;
+        }
+
+        /// <summary>
+        /// Отбрасывание от взрыва
+        /// </summary>
         public void AddExplosionForce(float explosionForce, Vector3 explosionPosition, float explosionRadius, float upwardsModifier = 0f)
         {
-            Vector3 explosionDir = transform.position - explosionPosition;
-            float explosionDistance = explosionDir.magnitude;
+            Vector3 dir = (transform.position - explosionPosition);
+            float distance = dir.magnitude;
 
             if (upwardsModifier != 0)
             {
-                explosionDir.y += upwardsModifier;
-                explosionDir.Normalize();
+                dir.y += upwardsModifier;
+                dir.Normalize();
             }
             else
             {
-                explosionDir = explosionDir.normalized;
+                dir = dir.normalized;
             }
 
-            float attenuation = 1f - Mathf.Clamp01(explosionDistance / explosionRadius);
-
-            Vector3 velocityChange = explosionDir * (explosionForce * attenuation);
-
-            m_ExplosionForceValue = velocityChange;
+            float attenuation = 1f - Mathf.Clamp01(distance / explosionRadius);
+            Vector3 velocityChange = dir * (explosionForce * attenuation);
+            m_Rigidbody.AddForce(velocityChange, ForceMode.VelocityChange);
         }
     }
 }

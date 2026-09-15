@@ -196,6 +196,10 @@ namespace TankSurvival
                 return;
             }
 
+            // Передаём ссылку на игрока WaveManager
+            if (m_PlayerManager.m_Instance != null)
+                m_WaveManager.playerTransform = m_PlayerManager.m_Instance.transform;
+
             DifficultyData difficulty = allDifficultyData[m_CurrentDifficultyIndex];
             m_WaveManager.StartWave(difficulty, m_CurrentWaveNumber, TOTAL_WAVES);
 

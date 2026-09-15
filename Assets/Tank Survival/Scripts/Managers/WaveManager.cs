@@ -14,8 +14,9 @@ namespace TankSurvival
         public static WaveManager Instance { get; private set; }
 
         [Header("Spawn Settings")]
-        public Transform[] spawnPoints;           // Точки спавна врагов (расположены по краям карты)
-        public GameObject[] enemyPrefabs;         // Доступные типы врагов для спавна
+        public Transform spawnPoint;            // Точка спавна врагов (по краям карты)
+        public Transform playerTransform;       // Ссылка на игрока (для AI)
+        public GameObject[] enemyPrefabs;       // Доступные типы врагов для спавна
 
         [Header("Current Wave Info")]
         public int currentWave;                   // Текущая волна (начинается с 1)
@@ -103,9 +104,9 @@ namespace TankSurvival
         /// </summary>
         private void SpawnEnemy()
         {
-            if (spawnPoints == null || spawnPoints.Length == 0)
+            if (spawnPoint == null)
             {
-                Debug.LogError("[WaveManager] Не указаны точки спавна!");
+                Debug.LogError("[WaveManager] Не указана точка спавна!");
                 return;
             }
 
@@ -115,12 +116,24 @@ namespace TankSurvival
                 return;
             }
 
-            // Случайная точка спавна
-            Transform point = spawnPoints[Random.Range(0, spawnPoints.Length)];
-            
+            if (playerTransform == null)
+            {
+                Debug.LogWarning("[WaveManager] Ссылка на игрока не указана!");
+                return;
+            }
+
+            // Случайная точка спавна (добавляем случайное смещение по кругу)
+            float angle = Random.Range(0f, Mathf.PI * 2f);
+            float radius = 15f; // Радиус спавна вокруг игрока
+            Vector3 spawnPosition = playerTransform.position + new Vector3(
+                Mathf.Cos(angle) * radius,
+                0f,
+                Mathf.Sin(angle) * radius
+            );
+
             // Случайный тип врага
             GameObject enemyPrefab = enemyPrefabs[Random.Range(0, enemyPrefabs.Length)];
-            GameObject enemy = Instantiate(enemyPrefab, point.position, Quaternion.identity);
+            GameObject enemy = Instantiate(enemyPrefab, spawnPosition, Quaternion.identity);
 
             // Применяем множители сложности к движению
             EnemyMovement move = enemy.GetComponent<EnemyMovement>();
@@ -136,6 +149,11 @@ namespace TankSurvival
                 health.m_StartingHealth *= currentEnemyHealthMultiplier;
                 health.ResetHealth(); // Пересчитать текущее здоровье
             }
+
+            // Указываем врагу, кто игрок
+            EnemyAI ai = enemy.GetComponent<EnemyAI>();
+            if (ai != null)
+                ai.SetPlayer(playerTransform);
 
             // Подписываемся на смерть врага
             var listener = enemy.AddComponent<EnemyDeathListener>();
