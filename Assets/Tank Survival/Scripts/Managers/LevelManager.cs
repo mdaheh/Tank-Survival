@@ -18,7 +18,8 @@ namespace TankSurvival
         public List<UpgradeOptionData> upgradePool;     // Пул всех доступных улучшений
 
         [Header("UI References (для интеграции с UI)")]
-        public GameObject levelUpPanel;                 // Панель выбора улучшений
+        public GameObject levelUpPanel;                 // Панель выбора улучшений (устаревшее)
+        public UpgradePanel m_UpgradePanel;             // Скрипт панели улучшений (новый)
         public UnityEngine.UI.Image xpBarFill;          // Заполнение прогресс-бара XP
         public TMPro.TMP_Text levelText;              // Текст текущего уровня
         public TMPro.TMP_Text xpText;                 // Текст текущего XP / необходимого XP
@@ -151,8 +152,10 @@ namespace TankSurvival
             if (debugMode)
                 Debug.Log($"[LevelManager] Применено улучшение: {upgrade.displayName}");
 
-            // Скрыть панель улучшений
-            if (levelUpPanel != null)
+            // Скрыть панель улучшений (оба варианта)
+            if (m_UpgradePanel != null)
+                m_UpgradePanel.HidePanel();
+            else if (levelUpPanel != null)
                 levelUpPanel.SetActive(false);
         }
 

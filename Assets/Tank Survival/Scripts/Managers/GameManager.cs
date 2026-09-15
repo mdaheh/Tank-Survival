@@ -47,6 +47,9 @@ namespace TankSurvival
         public TMPro.TMP_Text m_TotalKillsText;
         public TMPro.TMP_Text m_WaveText;
 
+        [Header("UI Scripts")]
+        public RoundEndUI m_RoundEndUI;                // Скрипт экрана окончания раунда
+
         [Header("Settings")]
         public List<ChassisData> allChassisData;      // Все данные шасси (заполнить в Inspector)
         public List<TurretData> allTurretData;        // Все данные башен (заполнить в Inspector)
@@ -281,8 +284,10 @@ namespace TankSurvival
             // Сохраняем прогресс
             SaveSystem.Save(m_PlayerProgress);
 
-            // Показываем экран окончания раунда
-            if (m_RoundEndPanel != null)
+            // Показываем экран окончания раунда через RoundEndUI
+            if (m_RoundEndUI != null)
+                m_RoundEndUI.ShowRoundEnd(m_PlayerProgress, m_CurrentDifficultyIndex);
+            else if (m_RoundEndPanel != null)
                 m_RoundEndPanel.SetActive(true);
         }
 
