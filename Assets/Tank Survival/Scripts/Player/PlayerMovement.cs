@@ -4,7 +4,8 @@ using UnityEngine.InputSystem;
 namespace TankSurvival
 {
     /// <summary>
-    /// Движение игрока — наследуется от логики TankMover (общая база для всех танков).
+    /// Движение игрока — использует новый Input System.
+    /// Управление: WASD (W=вперёд, S=назад, A=поворот влево, D=поворот вправо).
     /// Поддерживает бонусы от улучшений через компонент MovementData.
     /// </summary>
     public class PlayerMovement : MonoBehaviour
@@ -22,19 +23,14 @@ namespace TankSurvival
 
         public Rigidbody Rigidbody => m_Rigidbody;
 
-        private string m_MovementAxisName;          // The name of the input axis for moving forward and back.
-        private string m_TurnAxisName;              // The name of the input axis for turning.
         private Rigidbody m_Rigidbody;              // Reference used to move the tank.
-        private float m_MovementInputValue;         // The current value of the movement input.
-        private float m_TurnInputValue;             // The current value of the turn input.
-        private Vector3 m_ExplosionForceValue;      // The current force applied on the tank from an explosion.
-        private float m_OriginalPitch;              // The pitch of the audio source at the start of the scene.
-        private ParticleSystem[] m_particleSystems; // References to all the particle systems used by the Tank
+        private InputAction m_MoveAction;           // Action from the new Input System
+        private Vector2 m_MovementInput;            // Текущее значение ввода (x=поворот, y=движение)
+        private Vector3 m_ExplosionForceValue;      // Текущая сила от взрыва
+        private float m_OriginalPitch;              // Pitch аудио источника в начале сцены
+        private ParticleSystem[] m_particleSystems; // Ссылки на все particle системы танка
 
-        private InputAction m_MoveAction;           // The InputAction used to move
-        private InputAction m_TurnAction;           // The InputAction used to turn
-
-        private Vector3 m_RequestedDirection;       // In Direct Control mode, store the direction the user wants to go toward
+        private Vector3 m_RequestedDirection;       // В режиме Direct Control — направление движения
 
         // Компонент бонусов от улучшений
         private MovementData m_MovementData;
@@ -48,9 +44,7 @@ namespace TankSurvival
         private void OnEnable()
         {
             m_Rigidbody.isKinematic = false;
-
-            m_MovementInputValue = 0f;
-            m_TurnInputValue = 0f;
+            m_MovementInput = Vector2.zero;
             m_ExplosionForceValue = Vector3.zero;
 
             m_particleSystems = GetComponentsInChildren<ParticleSystem>();
@@ -74,16 +68,27 @@ namespace TankSurvival
         {
             var inputUser = GetComponent<TankInputUser>();
             if (inputUser == null)
+            {
                 inputUser = gameObject.AddComponent<TankInputUser>();
+            }
 
-            m_MovementAxisName = "Vertical";
-            m_TurnAxisName = "Horizontal";
-
-            m_MoveAction = inputUser.ActionAsset.FindAction(m_MovementAxisName);
-            m_TurnAction = inputUser.ActionAsset.FindAction(m_TurnAxisName);
-
-            m_MoveAction.Enable();
-            m_TurnAction.Enable();
+            // Получаем действие Move из нового Input System
+            if (inputUser.ActionAsset != null)
+            {
+                m_MoveAction = inputUser.ActionAsset.FindActionMap("Gameplay").FindAction("Move");
+                if (m_MoveAction != null)
+                {
+                    m_MoveAction.Enable();
+                }
+                else
+                {
+                    Debug.LogError("[PlayerMovement] Действие 'Move' не найдено в ActionAsset 'Gameplay'!");
+                }
+            }
+            else
+            {
+                Debug.LogError("[PlayerMovement] ActionAsset не назначен на TankInputUser!");
+            }
 
             if (m_MovementAudio)
             {
@@ -93,8 +98,15 @@ namespace TankSurvival
 
         private void Update()
         {
-            m_MovementInputValue = m_MoveAction.ReadValue<float>();
-            m_TurnInputValue = m_TurnAction.ReadValue<float>();
+            // Читаем значение из нового Input System
+            if (m_MoveAction != null && m_MoveAction.IsPressed())
+            {
+                m_MovementInput = m_MoveAction.ReadValue<Vector2>();
+            }
+            else
+            {
+                m_MovementInput = Vector2.zero;
+            }
 
             if (m_MovementAudio)
             {
@@ -104,7 +116,9 @@ namespace TankSurvival
 
         private void EngineAudio()
         {
-            if (Mathf.Abs(m_MovementInputValue) < 0.1f && Mathf.Abs(m_TurnInputValue) < 0.1f)
+            bool isMoving = Mathf.Abs(m_MovementInput.y) > 0.1f || Mathf.Abs(m_MovementInput.x) > 0.1f;
+
+            if (!isMoving)
             {
                 if (m_MovementAudio.clip == m_EngineDriving)
                 {
@@ -140,7 +154,7 @@ namespace TankSurvival
                 camForward.Normalize();
                 var camRight = Vector3.Cross(Vector3.up, camForward);
 
-                m_RequestedDirection = (camForward * m_MovementInputValue + camRight * m_TurnInputValue);
+                m_RequestedDirection = (camForward * m_MovementInput.y + camRight * m_MovementInput.x);
                 m_RequestedDirection.Normalize();
             }
 
@@ -159,14 +173,15 @@ namespace TankSurvival
             }
             else
             {
-                speedInput = m_MovementInputValue;
+                // В обычном режиме: Y от W/S (вперёд/назад), X от A/D (поворот)
+                speedInput = m_MovementInput.y;
             }
 
             // Применяем бонусы от улучшений
             float speedMultiplier = 1f;
             if (m_MovementData != null)
             {
-                speedMultiplier = 1f + m_MovementData.speedBonus / 100f; // speedBonus — в процентах
+                speedMultiplier = 1f + m_MovementData.speedBonus / 100f;
             }
 
             Vector3 movement = transform.forward * speedInput * m_Speed * speedMultiplier;
@@ -182,7 +197,7 @@ namespace TankSurvival
             if (m_IsDirectControl)
             {
                 float angleTowardTarget = Vector3.SignedAngle(m_RequestedDirection, transform.forward, transform.up);
-                
+
                 // Применяем бонусы от улучшений
                 float turnSpeedMultiplier = 1f;
                 if (m_MovementData != null)
@@ -196,7 +211,8 @@ namespace TankSurvival
             }
             else
             {
-                float turn = m_TurnInputValue * m_TurnSpeed * Time.deltaTime;
+                // В обычном режиме: X от A/D (поворот влево/вправо)
+                float turn = m_MovementInput.x * m_TurnSpeed * Time.deltaTime;
                 turnRotation = Quaternion.Euler(0f, turn, 0f);
             }
 

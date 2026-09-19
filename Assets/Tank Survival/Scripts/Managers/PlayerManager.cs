@@ -139,16 +139,4 @@ namespace TankSurvival
             }
         }
     }
-    
-#if UNITY_EDITOR
-    [CustomPropertyDrawer(typeof(PlayerManager))]
-    public class PlayerManagerDrawer : PropertyDrawer
-    {
-        public override VisualElement CreatePropertyGUI(SerializedProperty property)
-        {
-            var itemSlot = new PropertyField(property.FindPropertyRelative(nameof(PlayerManager.m_SpawnPoint)));
-            return itemSlot;
-        }
-    }
-#endif
 }

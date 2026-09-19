@@ -67,7 +67,7 @@ namespace TankSurvival
             // Find TurretPos on the chassis and spawn turret there
             if (turretPrefab != null)
             {
-                Transform turretPos = TankPreview.transform.Find("TurretPos");
+                Transform turretPos = TankPreview.transform.Find("TurretMount");
                 if (turretPos != null)
                 {
                     m_TurretInstance = Instantiate(turretPrefab, turretPos);

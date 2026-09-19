@@ -1880,7 +1880,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Tanks.Complete.GameManager
   m_CameraControl: {fileID: 1336069159}
-  m_PlayerManager: {fileID: 0}
+  m_PlayerManager: {fileID: 1117343794}
   m_WaveManager: {fileID: 1019273255}
   m_LevelManager: {fileID: 1083707559}
   m_DifficultyPanel: {fileID: 0}
@@ -1889,10 +1889,6 @@ MonoBehaviour:
   m_TotalKillsText: {fileID: 0}
   m_WaveText: {fileID: 0}
   m_RoundEndUI: {fileID: 2004865042}
-  allChassisData:
-  - {fileID: 0}
-  allTurretData: []
-  allDifficultyData: []
 --- !u!4 &715155887
 Transform:
   m_ObjectHideFlags: 0
@@ -2077,6 +2073,8 @@ Transform:
   - {fileID: 715155887}
   - {fileID: 1019273254}
   - {fileID: 1083707558}
+  - {fileID: 1117343793}
+  - {fileID: 1430385462}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &891842808
@@ -2528,8 +2526,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8f17773e5cb339849ae488fc7e048bba, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TankSurvival.LevelManager
-  levelCurve: {fileID: 0}
-  upgradePool: []
   levelUpPanel: {fileID: 0}
   m_UpgradePanel: {fileID: 1121829457}
   xpBarFill: {fileID: 0}
@@ -2545,6 +2541,55 @@ MonoBehaviour:
   OnUpgradeOptionsRequested:
     m_PersistentCalls:
       m_Calls: []
+--- !u!1 &1117343792
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1117343793}
+  - component: {fileID: 1117343794}
+  m_Layer: 0
+  m_Name: PlayerManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1117343793
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1117343792}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 861877690}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1117343794
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1117343792}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 662b670b5a51cb44f8fe672a467a00a1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TankSurvival.PlayerManager
+  m_SpawnPoint: {fileID: 313934840}
+  m_PlayerNumber: 0
+  m_Instance: {fileID: 0}
+  m_TurretInstance: {fileID: 0}
+  m_Wins: 0
 --- !u!1 &1121829456
 GameObject:
   m_ObjectHideFlags: 0
@@ -3117,6 +3162,71 @@ MonoBehaviour:
   m_ScreenEdgeBuffer: 4
   m_MinSize: 17
   m_Target: {fileID: 0}
+--- !u!1 &1430385461
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1430385462}
+  - component: {fileID: 1430385463}
+  m_Layer: 0
+  m_Name: DataInitializer
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1430385462
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1430385461}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 861877690}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1430385463
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1430385461}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8894d6f9b3d70e94ca00779c7be135dd, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TankSurvival.DataInitializer
+  chassisData:
+  - {fileID: 11400000, guid: d0996e0a76fdc4246963bc83de577427, type: 2}
+  - {fileID: 11400000, guid: 7c98b0a3521a3c2468e6fb9ceea7c163, type: 2}
+  - {fileID: 11400000, guid: cabad8bacf3a000449c7974a58fed3a5, type: 2}
+  - {fileID: 11400000, guid: 95831cefb0e66af49b2139807fe61178, type: 2}
+  turretData:
+  - {fileID: 11400000, guid: bd29e50eb68e9444bb318dea667712c7, type: 2}
+  - {fileID: 11400000, guid: abfa5b90bb6e64a4aa48f7f5ea64d270, type: 2}
+  - {fileID: 11400000, guid: 7f99e50f293f19b41951d7d3c94d1205, type: 2}
+  - {fileID: 11400000, guid: 928debd76d4943a4b9f678a33316ce7e, type: 2}
+  difficultyData:
+  - {fileID: 11400000, guid: 0df41edd066806a4991315ca6f201636, type: 2}
+  - {fileID: 11400000, guid: 553417fe37251fd40a6f197c64310a30, type: 2}
+  - {fileID: 11400000, guid: 7025de0cf46581245ad5c2b5348dd27e, type: 2}
+  upgradeData:
+  - {fileID: 11400000, guid: ddc0900682401f24f8b4028efefeb482, type: 2}
+  - {fileID: 11400000, guid: 9c04c4076fbdf33459ffb7023ffb35c8, type: 2}
+  - {fileID: 11400000, guid: 3f27fbde6a2254149bcc055d1c280a47, type: 2}
+  - {fileID: 11400000, guid: bd12d3f454cfe2f42ad1ce468a95015f, type: 2}
+  - {fileID: 11400000, guid: ff1a851566c111540b3056736310b6fd, type: 2}
+  levelCurve: {fileID: 11400000, guid: cdb19045611c73b4fa119fd66079f027, type: 2}
 --- !u!1 &1532641970
 GameObject:
   m_ObjectHideFlags: 0
@@ -4738,8 +4848,6 @@ MonoBehaviour:
   m_TurretDropdown: {fileID: 0}
   m_DefaultChassis: {fileID: 7910786161505004784, guid: f52ffe6b6e625624587694514d8698a7, type: 3}
   m_DefaultTurret: {fileID: 8646141104796471080, guid: c64536326b0047b42964324163b1c262, type: 3}
-  chassisDataList: []
-  turretDataList: []
   m_KillsRequiredText: {fileID: 0}
 --- !u!224 &3840787180980867804
 RectTransform:

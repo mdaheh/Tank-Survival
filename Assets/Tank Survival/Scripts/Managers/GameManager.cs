@@ -50,11 +50,7 @@ namespace TankSurvival
         [Header("UI Scripts")]
         public RoundEndUI m_RoundEndUI;                // Скрипт экрана окончания раунда
 
-        [Header("Settings")]
-        public List<ChassisData> allChassisData;      // Все данные шасси (заполнить в Inspector)
-        public List<TurretData> allTurretData;        // Все данные башен (заполнить в Inspector)
-        public List<DifficultyData> allDifficultyData; // Все данные сложности
-
+        
         // --- Состояние ---
         private GameState m_CurrentState;
         private PlayerData m_CurrentPlayerData;
@@ -203,7 +199,7 @@ namespace TankSurvival
             if (m_PlayerManager.m_Instance != null)
                 m_WaveManager.playerTransform = m_PlayerManager.m_Instance.transform;
 
-            DifficultyData difficulty = allDifficultyData[m_CurrentDifficultyIndex];
+            DifficultyData difficulty = DataCatalog.GetAllDifficulties()[m_CurrentDifficultyIndex];
             m_WaveManager.StartWave(difficulty, m_CurrentWaveNumber, TOTAL_WAVES);
 
             // Подписываемся на события волны
@@ -222,7 +218,7 @@ namespace TankSurvival
 
             // Обновляем разблокировки
             m_PlayerProgress.UpdateDifficultyUnlocks(m_PlayerProgress.totalKills);
-            m_PlayerProgress.UpdatePartUnlocks(allChassisData, allTurretData, m_PlayerProgress.totalKills);
+            m_PlayerProgress.UpdatePartUnlocks(DataCatalog.GetAllChassis(), DataCatalog.GetAllTurrets(), m_PlayerProgress.totalKills);
 
             // Сохраняем прогресс
             SaveSystem.Save(m_PlayerProgress);

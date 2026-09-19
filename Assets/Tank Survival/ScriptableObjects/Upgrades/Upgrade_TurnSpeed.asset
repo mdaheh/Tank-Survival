@@ -1,0 +1,19 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 821ccb96db589d34199d85d87d31a0a9, type: 3}
+  m_Name: Upgrade_TurnSpeed
+  m_EditorClassIdentifier: Assembly-CSharp::TankSurvival.UpgradeOptionData
+  type: 3
+  displayName: TurnSpeed
+  description: "+10% \u043F\u043E\u0432\u043E\u0440\u043E\u0442"
+  icon: {fileID: 0}
+  value: 10

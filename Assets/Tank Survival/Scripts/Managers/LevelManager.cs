@@ -13,10 +13,6 @@ namespace TankSurvival
     {
         public static LevelManager Instance { get; private set; }
 
-        [Header("References")]
-        public LevelData levelCurve;                    // Кривая XP (ScriptableObject)
-        public List<UpgradeOptionData> upgradePool;     // Пул всех доступных улучшений
-
         [Header("UI References (для интеграции с UI)")]
         public GameObject levelUpPanel;                 // Панель выбора улучшений (устаревшее)
         public UpgradePanel m_UpgradePanel;             // Скрипт панели улучшений (новый)
@@ -55,7 +51,16 @@ namespace TankSurvival
 
         private void Start()
         {
-            m_XpRequired = levelCurve.GetXpRequiredForLevel(m_CurrentLevel);
+            var curve = DataCatalog.GetLevelCurve();
+            if (curve == null)
+            {
+                Debug.LogWarning("[LevelManager] LevelCurve не назначен! Использую дефолтное значение (50 XP).");
+                m_XpRequired = 50;
+            }
+            else
+            {
+                m_XpRequired = curve.GetXpRequiredForLevel(m_CurrentLevel);
+            }
             UpdateUI();
         }
 
@@ -96,7 +101,7 @@ namespace TankSurvival
         private void LevelUp()
         {
             m_CurrentLevel++;
-            m_XpRequired = levelCurve.GetXpRequiredForLevel(m_CurrentLevel);
+            m_XpRequired = DataCatalog.GetLevelCurve().GetXpRequiredForLevel(m_CurrentLevel);
 
             if (debugMode)
                 Debug.Log($"[LevelManager] Уровень {m_CurrentLevel}! Нужно ещё {m_XpRequired} XP");
@@ -104,10 +109,10 @@ namespace TankSurvival
             OnLevelUp?.Invoke(m_CurrentLevel);
 
             // Если достигнут максимальный уровень — ничего не предлагаем
-            if (!levelCurve.IsValidLevel(m_CurrentLevel))
+            if (!DataCatalog.GetLevelCurve().IsValidLevel(m_CurrentLevel))
             {
                 if (debugMode)
-                    Debug.Log($"[LevelManager] Максимальный уровень {levelCurve.MaxLevel} достигнут!");
+                    Debug.Log($"[LevelManager] Максимальный уровень {DataCatalog.GetLevelCurve().MaxLevel} достигнут!");
                 return;
             }
 
@@ -124,7 +129,7 @@ namespace TankSurvival
 
             // Выбрать случайные улучшения из пула (перемешиваем через временные ключи)
             List<UpgradeOptionData> options = new();
-            var withKeys = upgradePool.Select(u => (u, key: Random.value)).OrderBy(x => x.key).ToList();
+            var withKeys = DataCatalog.GetAllUpgrades().Select(u => (u, key: Random.value)).OrderBy(x => x.key).ToList();
 
             int count = Mathf.Min(3, withKeys.Count); // Максимум 3 варианта
             for (int i = 0; i < count; i++)
@@ -183,7 +188,7 @@ namespace TankSurvival
         {
             m_CurrentLevel = 1;
             m_CurrentXp = 0;
-            m_XpRequired = levelCurve.GetXpRequiredForLevel(1);
+            m_XpRequired = DataCatalog.GetLevelCurve().GetXpRequiredForLevel(1);
             m_LevelUpPaused = false;
 
             if (debugMode)
@@ -195,7 +200,7 @@ namespace TankSurvival
         /// </summary>
         public void SetLevelAndXp(int level, int xp)
         {
-            if (!levelCurve.IsValidLevel(level))
+            if (!DataCatalog.GetLevelCurve().IsValidLevel(level))
             {
                 Debug.LogWarning($"[LevelManager] Недопустимый уровень: {level}");
                 return;
@@ -203,7 +208,7 @@ namespace TankSurvival
 
             m_CurrentLevel = level;
             m_CurrentXp = xp;
-            m_XpRequired = levelCurve.GetXpRequiredForLevel(level);
+            m_XpRequired = DataCatalog.GetLevelCurve().GetXpRequiredForLevel(level);
             UpdateUI();
 
             if (debugMode)

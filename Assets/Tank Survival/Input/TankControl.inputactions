@@ -1,0 +1,72 @@
+{
+    "name": "TankControl",
+    "maps": [
+        {
+            "name": "Gameplay",
+            "id": "b8c4e2f1-3a7d-4e9b-8f1c-2d5a6e9b3c7f",
+            "actions": [
+                {
+                    "name": "Move",
+                    "type": "Button",
+                    "expectedControlType": "Vector2",
+                    "bindings": [
+                        {
+                            "path": "<Keyboard>/w",
+                            "interactions": "",
+                            "processors": ""
+                        },
+                        {
+                            "path": "<Keyboard>/s",
+                            "interactions": "",
+                            "processors": ""
+                        },
+                        {
+                            "path": "<Keyboard>/a",
+                            "interactions": "",
+                            "processors": ""
+                        },
+                        {
+                            "path": "<Keyboard>/d",
+                            "interactions": "",
+                            "processors": ""
+                        }
+                    ]
+                },
+                {
+                    "name": "Pause",
+                    "type": "Button",
+                    "expectedControlType": "Button",
+                    "bindings": [
+                        {
+                            "path": "<Keyboard>/escape",
+                            "interactions": "",
+                            "processors": ""
+                        }
+                    ]
+                }
+            ],
+            "controlSchemes": [
+                {
+                    "name": "Keyboard",
+                    "devices": [
+                        {
+                            "devicePath": "<Keyboard>",
+                            "isOptional": false
+                        }
+                    ]
+                }
+            ]
+        }
+    ],
+    "controlSchemes": [
+        {
+            "name": "Keyboard",
+            "devices": [
+                {
+                    "devicePath": "<Keyboard>",
+                    "isOptional": false
+                }
+            ]
+        }
+    ]
+}

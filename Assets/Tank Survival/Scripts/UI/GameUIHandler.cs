@@ -41,10 +41,6 @@ namespace TankSurvival
         public GameObject m_DefaultChassis;
         public GameObject m_DefaultTurret;
 
-        [Header("Part Data (заполнить ScriptableObjects)")]
-        public List<ChassisData> chassisDataList;      // Все данные шасси
-        public List<TurretData> turretDataList;        // Все данные башен
-
         [Header("UI Feedback")]
         public TMPro.TMP_Text m_KillsRequiredText;   // Текст "Требуется убийств: X"
 
@@ -80,7 +76,6 @@ namespace TankSurvival
             if (m_PauseMenu != null)
             {
                 m_PauseMenu.Init();
-                m_PauseAction = InputSystem.actions.FindAction("Pause").Clone();
                 var rectTransform = m_PauseMenuButton.GetComponent<RectTransform>();
                 rectTransform.SetAsLastSibling();
             }
@@ -168,9 +163,9 @@ namespace TankSurvival
             m_UnlockedChassisOptions.Clear();
             m_UnlockedTurretOptions.Clear();
 
-            for (int i = 0; i < chassisDataList.Count; i++)
+            for (int i = 0; i < DataCatalog.GetAllChassis().Count; i++)
             {
-                var chassis = chassisDataList[i];
+                var chassis = DataCatalog.GetAllChassis()[i];
                 bool isUnlocked = m_PlayerProgress.IsChassisUnlocked(chassis.id) ||
                                   chassis.killsRequired == 0;
 
@@ -180,9 +175,9 @@ namespace TankSurvival
                 }
             }
 
-            for (int i = 0; i < turretDataList.Count; i++)
+            for (int i = 0; i < DataCatalog.GetAllTurrets().Count; i++)
             {
-                var turret = turretDataList[i];
+                var turret = DataCatalog.GetAllTurrets()[i];
                 bool isUnlocked = m_PlayerProgress.IsTurretUnlocked(turret.id) ||
                                   turret.killsRequired == 0;
 
@@ -241,13 +236,13 @@ namespace TankSurvival
             {
                 // Ищем ChassisData по имени из dropdown
                 string chassisName = m_UnlockedChassisOptions[m_ChassisDropdown.value].text;
-                selectedChassis = chassisDataList.Find(c => c.displayName == chassisName);
+                selectedChassis = DataCatalog.GetAllChassis().Find(c => c.displayName == chassisName);
             }
 
             if (m_TurretDropdown != null && m_TurretDropdown.value < m_UnlockedTurretOptions.Count)
             {
                 string turretName = m_UnlockedTurretOptions[m_TurretDropdown.value].text;
-                selectedTurret = turretDataList.Find(t => t.displayName == turretName);
+                selectedTurret = DataCatalog.GetAllTurrets().Find(t => t.displayName == turretName);
             }
 
             // Показываем требования
@@ -295,8 +290,14 @@ namespace TankSurvival
             // Включаем кнопку паузы
             if (m_PauseMenu != null)
             {
-                m_PauseAction.performed += evt => { TogglePause(); };
-                m_PauseAction.Enable();
+                // Получаем Pause действие из TankInputUser
+                var tankInput = FindAnyObjectByType<TankInputUser>(FindObjectsInactive.Include);
+                if (tankInput?.ActionAsset != null)
+                {
+                    m_PauseAction = tankInput.ActionAsset.FindActionMap("Gameplay").FindAction("Pause").Clone();
+                    m_PauseAction.performed += evt => { TogglePause(); };
+                    m_PauseAction.Enable();
+                }
                 m_PauseMenuButton.gameObject.SetActive(true);
             }
         }
@@ -310,7 +311,7 @@ namespace TankSurvival
                 return null;
 
             string chassisName = m_UnlockedChassisOptions[m_ChassisDropdown.value].text;
-            return chassisDataList.Find(c => c.displayName == chassisName);
+            return DataCatalog.GetAllChassis().Find(c => c.displayName == chassisName);
         }
 
         /// <summary>
@@ -322,7 +323,7 @@ namespace TankSurvival
                 return null;
 
             string turretName = m_UnlockedTurretOptions[m_TurretDropdown.value].text;
-            return turretDataList.Find(t => t.displayName == turretName);
+            return DataCatalog.GetAllTurrets().Find(t => t.displayName == turretName);
         }
 
         /// <summary>
