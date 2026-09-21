@@ -272,8 +272,6 @@ namespace TankSurvival
             {
                 chassisId = selectedChassis ? selectedChassis.id : 0,
                 turretId = selectedTurret ? selectedTurret.id : 0,
-                chassisPrefab = selectedChassis ? selectedChassis.prefab : null,
-                turretPrefab = selectedTurret ? selectedTurret.prefab : null,
                 difficultyIndex = m_SelectedDifficultyIndex
             };
 

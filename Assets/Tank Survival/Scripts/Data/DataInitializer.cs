@@ -3,6 +3,9 @@ using UnityEngine;
 
 namespace TankSurvival
 {
+    /// <summary>
+    /// Назначает данные в Inspector и инициализирует DataCatalog.
+    /// </summary>
     public class DataInitializer : MonoBehaviour
     {
         public List<ChassisData> chassisData;
@@ -11,8 +14,16 @@ namespace TankSurvival
         public List<UpgradeOptionData> upgradeData;
         public LevelData levelCurve;
 
-        private void Start()
+        private void Awake()
         {
+            // Проверяем — данные назначены в Inspector?
+            if (chassisData == null || chassisData.Count == 0)
+            {
+                Debug.LogError("[DataInitializer] Данные не назначены в Inspector!");
+                return;
+            }
+
+            // Инициализируем каталог
             DataCatalog.Init(chassisData, turretData, difficultyData, upgradeData, levelCurve);
         }
     }

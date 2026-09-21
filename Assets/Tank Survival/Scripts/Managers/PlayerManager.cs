@@ -40,29 +40,76 @@ namespace TankSurvival
 
         public static PlayerManager Instance { get; private set; }
 
-        /// <summary>
-        /// Spawn the player's tank: body + turret attached to TurretPos
-        /// </summary>
-        public void SpawnTank(GameObject bodyPrefab, GameObject turretPrefab, Vector3 position, Quaternion rotation)
+        public void SpawnTank(int chassisId, int turretId, Vector3 position, Quaternion rotation)
         {
-            // Spawn the body (chassis)
-            m_Instance = UnityEngine.Object.Instantiate(bodyPrefab, position, rotation);
+            // 1. Получить данные из DataCatalog
+            var chassisData = DataCatalog.GetChassis(chassisId);
+            var turretData = DataCatalog.GetTurret(turretId);
 
-            // Find the TurretPos transform on the body
-            Transform turretPos = m_Instance.transform.Find("TurretPos");
-            if (turretPos == null)
+            if (chassisData == null)
             {
-                Debug.LogError("PlayerManager: На теле танка не найден объект 'TurretPos' для крепления башни!");
+                Debug.LogError($"[PlayerManager] Шасси с ID {chassisId} не найдено в DataCatalog!");
                 return;
             }
 
-            // Spawn the turret as a child of TurretPos
-            if (turretPrefab != null)
+            // 2. Инстанцировать префаб из данных
+            m_Instance = UnityEngine.Object.Instantiate(chassisData.prefab, position, rotation);
+
+            // 3. Найти TurretPos на теле танка
+            Transform turretPos = m_Instance.transform.Find("TurretPos");
+            if (turretPos == null)
             {
-                m_TurretInstance = UnityEngine.Object.Instantiate(turretPrefab, turretPos);
+                Debug.LogError("[PlayerManager] На теле танка не найден объект 'TurretPos' для крепления башни!");
+                return;
             }
+
+            // 4. Инстанцировать башню
+            if (turretData != null && turretData.prefab != null)
+            {
+                m_TurretInstance = UnityEngine.Object.Instantiate(turretData.prefab, turretPos);
+            }
+
+            // 5. Добавить компоненты и применить настройки
+            ApplyChassisStats(chassisData);
+            if (turretData != null)
+                ApplyTurretStats(turretData);
+        }
+        /// <summary>
+        /// Применить настройки шасси к компонентам на теле танка
+        /// </summary>
+        private void ApplyChassisStats(ChassisData chassis)
+        {
+            // PlayerMovement — движение и поворот
+            var movement = m_Instance.GetComponent<PlayerMovement>();
+            if (movement == null)
+            {
+                movement = m_Instance.AddComponent<PlayerMovement>();
+            }
+            movement.m_Speed = chassis.moveSpeed;
+            movement.m_TurnSpeed = chassis.turnSpeed;
+
+            // TankHealth — здоровье
+            var health = m_Instance.GetComponent<TankHealth>();
+            if (health == null)
+            {
+                health = m_Instance.AddComponent<TankHealth>();
+            }
+            health.m_StartingHealth = chassis.maxHealth;
         }
 
+        /// <summary>
+        /// Применить настройки башни к компонентам на башне
+        /// </summary>
+        private void ApplyTurretStats(TurretData turret)
+        {
+            var shooting = m_TurretInstance.GetComponent<Shooting>();
+            if (shooting == null)
+            {
+                shooting = m_TurretInstance.AddComponent<Shooting>();
+            }
+            shooting.m_ShotCooldown = turret.fireRate;
+            shooting.fireRange = turret.fireRange;
+        }
         public void Setup(int controlIndex = 1)
         {
             if (m_Instance == null)

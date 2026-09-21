@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ChassisData
   id: 104
   displayName: "\u0428\u0430\u0441\u0441\u0438 Veteran"
-  prefab: {fileID: 0}
+  prefab: {fileID: 5312034727318475855, guid: 05558a4cf19ac5a4d868ab864044d143, type: 3}
   maxHealth: 90
   moveSpeed: 15
   turnSpeed: 200

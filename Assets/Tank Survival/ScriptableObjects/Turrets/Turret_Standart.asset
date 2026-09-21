@@ -14,8 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::TurretData
   id: 201
   displayName: "\u0411\u0430\u0448\u043D\u044F Standart"
-  prefab: {fileID: 0}
-  shellPrefab: {fileID: 0}
+  prefab: {fileID: 8646141104796471080, guid: c64536326b0047b42964324163b1c262, type: 3}
+  shellPrefab: {fileID: 192454, guid: 008ecb1b70bec724fa2cd34255b0d8f8, type: 3}
   damage: 25
   fireRate: 0.8
   fireRange: 15

@@ -1,7 +1,6 @@
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
-using UnityEngine.SceneManagement;
 using UnityEngine.Serialization;
 
 namespace TankSurvival
@@ -27,10 +26,8 @@ namespace TankSurvival
         [System.Serializable]
         public class PlayerData
         {
-            public int chassisId;           // ID выбранного шасси (из ChassisData.id)
-            public int turretId;            // ID выбранной башни (из TurretData.id)
-            public GameObject chassisPrefab;
-            public GameObject turretPrefab;
+            public int chassisId;           // ID выбранного шасси
+            public int turretId;            // ID выбранной башни
             public int difficultyIndex;     // 0=Easy, 1=Medium, 2=Hard
         }
 
@@ -50,7 +47,7 @@ namespace TankSurvival
         [Header("UI Scripts")]
         public RoundEndUI m_RoundEndUI;                // Скрипт экрана окончания раунда
 
-        
+
         // --- Состояние ---
         private GameState m_CurrentState;
         private PlayerData m_CurrentPlayerData;
@@ -143,18 +140,9 @@ namespace TankSurvival
                 return;
             }
 
-            GameObject chassisPrefab = m_CurrentPlayerData.chassisPrefab;
-            GameObject turretPrefab = m_CurrentPlayerData.turretPrefab;
-
-            if (chassisPrefab == null)
-            {
-                Debug.LogError("[GameManager] Шасси не выбрано!");
-                return;
-            }
-
             m_PlayerManager.SpawnTank(
-                chassisPrefab,
-                turretPrefab,
+                m_CurrentPlayerData.chassisId,
+                m_CurrentPlayerData.turretId,
                 m_PlayerManager.m_SpawnPoint.position,
                 m_PlayerManager.m_SpawnPoint.rotation
             );
@@ -292,11 +280,19 @@ namespace TankSurvival
         /// </summary>
         public void StartNewRound()
         {
+            // Скрываем панель окончания раунда
             if (m_RoundEndPanel != null)
                 m_RoundEndPanel.SetActive(false);
 
-            // Перезагружаем сцену
-            SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
+            // Сбрасываем состояние — без перезагрузки сцены
+            m_CurrentState = GameState.MainMenu;
+            m_CurrentWaveNumber = 1;
+
+            // Показываем меню выбора сложности
+            if (m_DifficultyPanel != null)
+                m_DifficultyPanel.SetActive(true);
+
+            Debug.Log("[GameManager] Новый раунд начат без перезагрузки сцены");
         }
 
         /// <summary>
@@ -304,11 +300,19 @@ namespace TankSurvival
         /// </summary>
         public void GoToHangar()
         {
+            // Скрываем панель окончания раунда
             if (m_RoundEndPanel != null)
                 m_RoundEndPanel.SetActive(false);
 
-            // Перезагружаем сцену
-            SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
+            // Сбрасываем состояние — без перезагрузки сцены
+            m_CurrentState = GameState.MainMenu;
+            m_CurrentWaveNumber = 1;
+
+            // Показываем меню выбора сложности
+            if (m_DifficultyPanel != null)
+                m_DifficultyPanel.SetActive(true);
+
+            Debug.Log("[GameManager] Возврат в ангар без перезагрузки сцены");
         }
 
         /// <summary>

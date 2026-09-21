@@ -92,12 +92,6 @@ PrefabInstance:
     m_AddedComponents:
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: fd2bcf943a2b0864e8027560a297b3de, type: 3}
       insertIndex: -1
-      addedObject: {fileID: -1391430319253517361}
-    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: fd2bcf943a2b0864e8027560a297b3de, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: -8651698466918819046}
-    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: fd2bcf943a2b0864e8027560a297b3de, type: 3}
-      insertIndex: -1
       addedObject: {fileID: 265204505428940450}
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: fd2bcf943a2b0864e8027560a297b3de, type: 3}
       insertIndex: -1
@@ -113,44 +107,6 @@ GameObject:
   m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: fd2bcf943a2b0864e8027560a297b3de, type: 3}
   m_PrefabInstance: {fileID: 6992308772733047201}
   m_PrefabAsset: {fileID: 0}
---- !u!114 &-1391430319253517361
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7910786161505004784}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 34b7f7299752efd4082635cf9ab48c8c, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Tanks.Complete.PlayerMovement
-  m_Speed: 12
-  m_TurnSpeed: 180
-  m_IsDirectControl: 0
-  m_MovementAudio: {fileID: 0}
-  m_EngineIdling: {fileID: 0}
-  m_EngineDriving: {fileID: 0}
-  m_PitchRange: 0.2
---- !u!114 &-8651698466918819046
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7910786161505004784}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 030896d0325fa3e4d8d7d4cfe2351cb2, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Tanks.Complete.TankHealth
-  m_StartingHealth: 100
-  m_Slider: {fileID: 0}
-  m_FillImage: {fileID: 0}
-  m_FullHealthColor: {r: 0, g: 1, b: 0, a: 1}
-  m_ZeroHealthColor: {r: 1, g: 0, b: 0, a: 1}
-  m_ExplosionPrefab: {fileID: 195792, guid: 537afde59eeba4c82897def1dccfba0a, type: 3}
-  m_HasShield: 0
 --- !u!54 &265204505428940450
 Rigidbody:
   m_ObjectHideFlags: 0

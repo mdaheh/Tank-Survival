@@ -2423,9 +2423,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: cdf2e0f7c0b025c4bb132f2cd32aef7c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TankSurvival.WaveManager
-  spawnPoint: {fileID: 0}
+  spawnPoint: {fileID: 313934840}
   playerTransform: {fileID: 0}
-  enemyPrefabs: []
+  enemyPrefabs:
+  - {fileID: 6286968234082687938, guid: bb1da095ba36c3a49b06e5726038df55, type: 3}
   currentWave: 0
   enemiesRemaining: 0
   enemiesToSpawn: 0
