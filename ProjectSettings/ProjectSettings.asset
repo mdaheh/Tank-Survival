@@ -885,14 +885,14 @@ PlayerSettings:
   editorAssembliesCompatibilityLevel: 1
   m_RenderingPath: 1
   m_MobileRenderingPath: 1
-  metroPackageName: Survivors
+  metroPackageName: Tank Survival
   metroPackageVersion: 
   metroCertificatePath: 
   metroCertificatePassword: 
   metroCertificateSubject: 
   metroCertificateIssuer: 
   metroCertificateNotAfter: 0000000000000000
-  metroApplicationDescription: Survivors
+  metroApplicationDescription: Tank Survival
   wsaImages: {}
   metroTileShortName: 
   metroTileShowName: 0

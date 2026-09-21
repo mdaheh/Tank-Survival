@@ -5,8 +5,7 @@ EditorBuildSettings:
   m_ObjectHideFlags: 0
   serializedVersion: 2
   m_Scenes:
-  - enabled: 0
-    path: Assets/_Tanks/Tutorial_Demo/Demo_Scenes/Demo_Game_Moon.unity
-    guid: 7d48af2f9c7c14840abfc5e21827efaa
-  m_configObjects:
-    com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 7fb6c1c790fa04865b379a6e8ccd7e9c, type: 3}
+  - enabled: 1
+    path: Assets/Tank Survival/Scenes/Main.unity
+    guid: 71a76b835ea0c6b459e7abd2c6bee068
+  m_configObjects: {}
