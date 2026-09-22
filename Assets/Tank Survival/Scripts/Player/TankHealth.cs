@@ -23,17 +23,15 @@ namespace TankSurvival
 
         private void Awake ()
         {
-            // Instantiate the explosion prefab and get a reference to the particle system on it.
-            m_ExplosionParticles = Instantiate (m_ExplosionPrefab).GetComponent<ParticleSystem> ();
+            if (m_ExplosionPrefab != null)
+            {
+                m_ExplosionParticles = Instantiate(m_ExplosionPrefab).GetComponent<ParticleSystem>();
+                m_ExplosionAudio = m_ExplosionParticles.GetComponent<AudioSource>();
+                m_ExplosionParticles.gameObject.SetActive(false);
+            }
 
-            // Get a reference to the audio source on the instantiated prefab.
-            m_ExplosionAudio = m_ExplosionParticles.GetComponent<AudioSource> ();
-
-            // Disable the prefab so it can be activated when it's required.
-            m_ExplosionParticles.gameObject.SetActive (false);
-            
-            // Set the slider max value to the max health the tank can have
-            m_Slider.maxValue = m_StartingHealth;
+            if (m_Slider != null)
+                m_Slider.maxValue = m_StartingHealth;
         }
 
         private void OnDestroy()
@@ -150,11 +148,11 @@ namespace TankSurvival
 
         private void SetHealthUI ()
         {
-            // Set the slider's value appropriately.
-            m_Slider.value = m_CurrentHealth;
+            if (m_Slider == null || m_FillImage == null)
+                return;
 
-            // Interpolate the color of the bar between the choosen colours based on the current percentage of the starting health.
-            m_FillImage.color = Color.Lerp (m_ZeroHealthColor, m_FullHealthColor, m_CurrentHealth / m_StartingHealth);
+            m_Slider.value = m_CurrentHealth;
+            m_FillImage.color = Color.Lerp(m_ZeroHealthColor, m_FullHealthColor, m_CurrentHealth / m_StartingHealth);
         }
 
 
@@ -163,15 +161,15 @@ namespace TankSurvival
             // Set the flag so that this function is only called once.
             m_Dead = true;
 
-            // Move the instantiated explosion prefab to the tank's position and turn it on.
-            m_ExplosionParticles.transform.position = transform.position;
-            m_ExplosionParticles.gameObject.SetActive (true);
+            if (m_ExplosionParticles != null)
+            {
+                m_ExplosionParticles.transform.position = transform.position;
+                m_ExplosionParticles.gameObject.SetActive(true);
+                m_ExplosionParticles.Play();
+            }
 
-            // Play the particle system of the tank exploding.
-            m_ExplosionParticles.Play ();
-
-            // Play the tank explosion sound effect.
-            m_ExplosionAudio.Play();
+            if (m_ExplosionAudio != null)
+                m_ExplosionAudio.Play();
 
             // Turn the tank off.
             gameObject.SetActive (false);

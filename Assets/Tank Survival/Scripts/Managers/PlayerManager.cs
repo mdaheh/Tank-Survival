@@ -42,7 +42,7 @@ namespace TankSurvival
 
         public void SpawnTank(int chassisId, int turretId, Vector3 position, Quaternion rotation)
         {
-            // 1. Получить данные из DataCatalog
+            // Получить данные из DataCatalog
             var chassisData = DataCatalog.GetChassis(chassisId);
             var turretData = DataCatalog.GetTurret(turretId);
 
@@ -52,24 +52,21 @@ namespace TankSurvival
                 return;
             }
 
-            // 2. Инстанцировать префаб из данных
+            // Инстанцировать префаб из данных
             m_Instance = UnityEngine.Object.Instantiate(chassisData.prefab, position, rotation);
 
-            // 3. Найти TurretPos на теле танка
-            Transform turretPos = m_Instance.transform.Find("TurretPos");
-            if (turretPos == null)
-            {
-                Debug.LogError("[PlayerManager] На теле танка не найден объект 'TurretPos' для крепления башни!");
-                return;
-            }
+            TurretMountPoint turretMount = m_Instance.GetComponentInChildren<TurretMountPoint>();
 
-            // 4. Инстанцировать башню
+            // Найти TurretPos на теле танка
+            Transform turretPos = turretMount != null ? turretMount.transform : null;
+
+            // Инстанцировать башню
             if (turretData != null && turretData.prefab != null)
             {
-                m_TurretInstance = UnityEngine.Object.Instantiate(turretData.prefab, turretPos);
+                m_TurretInstance = UnityEngine.Object.Instantiate(turretData.prefab, turretPos.position, turretPos.rotation, turretPos);
             }
 
-            // 5. Добавить компоненты и применить настройки
+            // Добавить компоненты и применить настройки
             ApplyChassisStats(chassisData);
             if (turretData != null)
                 ApplyTurretStats(turretData);

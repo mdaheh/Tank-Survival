@@ -59,6 +59,8 @@ namespace TankSurvival
             // Instantiate the chassis
             TankPreview = Instantiate(chassisPrefab);
 
+            TurretMountPoint turretMount = TankPreview.GetComponentInChildren<TurretMountPoint>();
+
             // Move chassis to the right preview position
             var position = m_MenuCamera.WorldToScreenPoint(m_TankPreviewPosition.position);
             TankPreview.transform.position =
@@ -67,14 +69,14 @@ namespace TankSurvival
             // Find TurretPos on the chassis and spawn turret there
             if (turretPrefab != null)
             {
-                Transform turretPos = TankPreview.transform.Find("TurretMount");
+                Transform turretPos = turretMount != null ? turretMount.transform : null;
                 if (turretPos != null)
                 {
                     m_TurretInstance = Instantiate(turretPrefab, turretPos);
                 }
                 else
                 {
-                    Debug.LogWarning("PlayerPreview: На шасси не найден объект 'TurretPos' для крепления башни!");
+                    Debug.LogWarning("PlayerPreview: На шасси не найден объект 'TurretMount' для крепления башни!");
                 }
             }
 
