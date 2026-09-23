@@ -5,6 +5,7 @@ namespace TankSurvival
     /// <summary>
     /// Контактный урон врага — наносит урон танку игрока при столкновении.
     /// Поведение: при столкновении с объектом слоя Players вызывает TankHealth.TakeDamage.
+    /// Использует OnCollisionEnter (не триггер), кулдаун — простое поле-таймер.
     /// </summary>
     public class ContactDamage : MonoBehaviour
     {
@@ -16,18 +17,13 @@ namespace TankSurvival
         public float m_Cooldown = 0.5f;
 
         private float m_LastDamageTime;
-        private bool m_HasTriggered;
 
-        private void OnTriggerEnter(Collider other)
+        private void OnCollisionEnter(Collision other)
         {
             // Проверяем слой — только объекты Players
             int layer = other.gameObject.layer;
             int playerLayer = LayerMask.NameToLayer("Players");
             if ((1 << layer) != (1 << playerLayer))
-                return;
-
-            // Предотвращаем повторный триггер для одного и того же столкновения
-            if (m_HasTriggered)
                 return;
 
             // Проверяем кулдаун
@@ -39,19 +35,11 @@ namespace TankSurvival
             m_LastDamageTime = now;
 
             // Ищем TankHealth на танке игрока
-            TankHealth health = other.GetComponent<TankHealth>();
+            TankHealth health = other.gameObject.GetComponent<TankHealth>();
             if (health != null)
             {
                 health.TakeDamage(m_Damage);
             }
-
-            m_HasTriggered = true;
-        }
-
-        private void OnTriggerExit(Collider other)
-        {
-            // Сбрасываем флаг при выходе из триггера — разрешаем новый контакт
-            m_HasTriggered = false;
         }
     }
 }

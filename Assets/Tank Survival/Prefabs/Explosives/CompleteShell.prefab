@@ -269,9 +269,21 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 498018}
     m_Modifications:
+    - target: {fileID: 113952, guid: 537afde59eeba4c82897def1dccfba0a, type: 3}
+      propertyPath: m_Layer
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 195792, guid: 537afde59eeba4c82897def1dccfba0a, type: 3}
       propertyPath: m_Name
       value: CompleteShellExplosion
+      objectReference: {fileID: 0}
+    - target: {fileID: 195792, guid: 537afde59eeba4c82897def1dccfba0a, type: 3}
+      propertyPath: m_Layer
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 199372, guid: 537afde59eeba4c82897def1dccfba0a, type: 3}
+      propertyPath: m_Layer
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 486730, guid: 537afde59eeba4c82897def1dccfba0a, type: 3}
       propertyPath: m_LocalPosition.x

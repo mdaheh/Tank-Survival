@@ -1,4 +1,5 @@
 {
+    "version": 1,
     "name": "TankControl",
     "maps": [
         {
@@ -7,53 +8,91 @@
             "actions": [
                 {
                     "name": "Move",
-                    "type": "Button",
-                    "expectedControlType": "Vector2",
-                    "bindings": [
-                        {
-                            "path": "<Keyboard>/w",
-                            "interactions": "",
-                            "processors": ""
-                        },
-                        {
-                            "path": "<Keyboard>/s",
-                            "interactions": "",
-                            "processors": ""
-                        },
-                        {
-                            "path": "<Keyboard>/a",
-                            "interactions": "",
-                            "processors": ""
-                        },
-                        {
-                            "path": "<Keyboard>/d",
-                            "interactions": "",
-                            "processors": ""
-                        }
-                    ]
+                    "type": "Value",
+                    "id": "8fdf921b-df79-40f9-93a2-434625456584",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": true,
+                    "priority": 0
                 },
                 {
                     "name": "Pause",
                     "type": "Button",
-                    "expectedControlType": "Button",
-                    "bindings": [
-                        {
-                            "path": "<Keyboard>/escape",
-                            "interactions": "",
-                            "processors": ""
-                        }
-                    ]
+                    "id": "c215f0f7-5daf-4a90-97c7-a75c9c136bbc",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false,
+                    "priority": 0
                 }
             ],
-            "controlSchemes": [
+            "bindings": [
                 {
-                    "name": "Keyboard",
-                    "devices": [
-                        {
-                            "devicePath": "<Keyboard>",
-                            "isOptional": false
-                        }
-                    ]
+                    "name": "",
+                    "id": "84d99109-129c-44ca-bf8b-98f5d1e9fd77",
+                    "path": "<Keyboard>/escape",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Pause",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "2D Vector",
+                    "id": "684dfe24-83b9-4d0a-8920-000c2208aa15",
+                    "path": "2DVector",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Move",
+                    "isComposite": true,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "up",
+                    "id": "94c13041-7215-42b7-9282-cdbbdf5f8fe4",
+                    "path": "<Keyboard>/w",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Move",
+                    "isComposite": false,
+                    "isPartOfComposite": true
+                },
+                {
+                    "name": "down",
+                    "id": "4ceb1d51-05f3-47a7-9dfc-d008f8f5c1ae",
+                    "path": "<Keyboard>/s",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Move",
+                    "isComposite": false,
+                    "isPartOfComposite": true
+                },
+                {
+                    "name": "left",
+                    "id": "f20b79d5-d6ce-4868-8430-db57157a992a",
+                    "path": "<Keyboard>/a",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Move",
+                    "isComposite": false,
+                    "isPartOfComposite": true
+                },
+                {
+                    "name": "right",
+                    "id": "b3fa7e91-3381-49c0-8b0b-bfb77846a6da",
+                    "path": "<Keyboard>/d",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Move",
+                    "isComposite": false,
+                    "isPartOfComposite": true
                 }
             ]
         }
@@ -61,10 +100,12 @@
     "controlSchemes": [
         {
             "name": "Keyboard",
+            "bindingGroup": "",
             "devices": [
                 {
                     "devicePath": "<Keyboard>",
-                    "isOptional": false
+                    "isOptional": false,
+                    "isOR": false
                 }
             ]
         }

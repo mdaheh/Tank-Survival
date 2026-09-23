@@ -99,7 +99,7 @@ namespace TankSurvival
         private void Update()
         {
             // Читаем значение из нового Input System
-            if (m_MoveAction != null && m_MoveAction.IsPressed())
+            if (m_MoveAction != null)
             {
                 m_MovementInput = m_MoveAction.ReadValue<Vector2>();
             }

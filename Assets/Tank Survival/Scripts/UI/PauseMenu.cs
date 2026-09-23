@@ -21,7 +21,7 @@ namespace TankSurvival
         public void Init()
         {
             // Получаем ссылку на GameManager
-            m_GameManager = FindObjectOfType<GameManager>();
+            m_GameManager = FindAnyObjectByType<GameManager>();
 
             // Setup clicking on the back button on the Control Screen disabling the Control Screen and re-enabling the pause menu buttons
             m_ControlMenuBackButton.onClick.AddListener(() =>

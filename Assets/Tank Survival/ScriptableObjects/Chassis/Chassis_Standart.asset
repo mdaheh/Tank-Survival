@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ChassisData
   id: 101
   displayName: "\u0428\u0430\u0441\u0441\u0438 Standart"
-  prefab: {fileID: 919132149155446097, guid: fd2bcf943a2b0864e8027560a297b3de, type: 3}
+  prefab: {fileID: 7910786161505004784, guid: f52ffe6b6e625624587694514d8698a7, type: 3}
   maxHealth: 100
   moveSpeed: 12
   turnSpeed: 180

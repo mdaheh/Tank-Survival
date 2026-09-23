@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using TMPro;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -36,8 +35,8 @@ namespace TankSurvival
         public TMPro.TMP_Text[] m_DifficultyLockText; // Текст "Заблокировано"
 
         [Header("Part Selection")]
-        public Dropdown m_ChassisDropdown;
-        public Dropdown m_TurretDropdown;
+        public TMP_Dropdown m_ChassisDropdown;
+        public TMP_Dropdown m_TurretDropdown;
         public GameObject m_DefaultChassis;
         public GameObject m_DefaultTurret;
 
@@ -49,8 +48,8 @@ namespace TankSurvival
         private int m_SelectedChassisIndex = 0;
         private int m_SelectedTurretIndex = 0;
         private int m_SelectedDifficultyIndex = 0;
-        private List<Dropdown.OptionData> m_UnlockedChassisOptions = new();
-        private List<Dropdown.OptionData> m_UnlockedTurretOptions = new();
+        private List<string> m_UnlockedChassisNames = new();
+        private List<string> m_UnlockedTurretNames = new();
 
         private void Awake()
         {
@@ -64,20 +63,22 @@ namespace TankSurvival
             m_StartButton.onClick.AddListener(StartGame);
 
             // Отключаем кнопку паузы в меню
-            m_PauseMenuButton.gameObject.SetActive(false);
+            if (m_PauseMenuButton != null)
+                m_PauseMenuButton.gameObject.SetActive(false);
 
-            // Получаем превью
+            // Получаем превью (вызов SetTankPreview происходит в UpdatePreview() после SetupPartSelection)
             m_PlayerPreview = FindAnyObjectByType<PlayerPreview>(FindObjectsInactive.Include);
-            if (m_PlayerPreview != null)
-                m_PlayerPreview.SetTankPreview(m_TankPreview);
 
             // Настройка паузы
             m_PauseMenu = FindAnyObjectByType<PauseMenu>(FindObjectsInactive.Include);
             if (m_PauseMenu != null)
             {
                 m_PauseMenu.Init();
-                var rectTransform = m_PauseMenuButton.GetComponent<RectTransform>();
-                rectTransform.SetAsLastSibling();
+                if (m_PauseMenuButton != null)
+                {
+                    var rectTransform = m_PauseMenuButton.GetComponent<RectTransform>();
+                    rectTransform.SetAsLastSibling();
+                }
             }
 
             // Настройка сложности
@@ -159,39 +160,47 @@ namespace TankSurvival
         /// </summary>
         private void SetupPartSelection()
         {
-            // Заполняем списки разблокированных частей
-            m_UnlockedChassisOptions.Clear();
-            m_UnlockedTurretOptions.Clear();
+            // Заполняем списки имён разблокированных частей
+            m_UnlockedChassisNames.Clear();
+            m_UnlockedTurretNames.Clear();
 
-            for (int i = 0; i < DataCatalog.GetAllChassis().Count; i++)
+            var allChassis = DataCatalog.GetAllChassis();
+            var allTurrets = DataCatalog.GetAllTurrets();
+            
+            Debug.Log($"[GameUIHandler] DataCatalog: Chassis={allChassis.Count}, Turrets={allTurrets.Count}");
+            Debug.Log($"[GameUIHandler] m_ChassisDropdown={(m_ChassisDropdown != null ? "назначен" : "NULL!")}, m_TurretDropdown={(m_TurretDropdown != null ? "назначен" : "NULL!")}");
+
+            for (int i = 0; i < allChassis.Count; i++)
             {
-                var chassis = DataCatalog.GetAllChassis()[i];
+                var chassis = allChassis[i];
                 bool isUnlocked = m_PlayerProgress.IsChassisUnlocked(chassis.id) ||
                                   chassis.killsRequired == 0;
 
                 if (isUnlocked)
                 {
-                    m_UnlockedChassisOptions.Add(new Dropdown.OptionData { text = chassis.displayName });
+                    m_UnlockedChassisNames.Add(chassis.displayName);
+                    Debug.Log($"[GameUIHandler] Разблокировано шасси: {chassis.displayName} (id={chassis.id})");
                 }
             }
 
-            for (int i = 0; i < DataCatalog.GetAllTurrets().Count; i++)
+            for (int i = 0; i < allTurrets.Count; i++)
             {
-                var turret = DataCatalog.GetAllTurrets()[i];
+                var turret = allTurrets[i];
                 bool isUnlocked = m_PlayerProgress.IsTurretUnlocked(turret.id) ||
                                   turret.killsRequired == 0;
 
                 if (isUnlocked)
                 {
-                    m_UnlockedTurretOptions.Add(new Dropdown.OptionData { text = turret.displayName });
+                    m_UnlockedTurretNames.Add(turret.displayName);
+                    Debug.Log($"[GameUIHandler] Разблокирована башня: {turret.displayName} (id={turret.id})");
                 }
             }
 
-            // Настройка дропдаунов
-            if (m_ChassisDropdown != null && m_UnlockedChassisOptions.Count > 0)
+            // Настройка дропдаунов (TMP)
+            if (m_ChassisDropdown != null && m_UnlockedChassisNames.Count > 0)
             {
                 m_ChassisDropdown.ClearOptions();
-                m_ChassisDropdown.AddOptions(m_UnlockedChassisOptions);
+                m_ChassisDropdown.AddOptions(m_UnlockedChassisNames);
                 m_ChassisDropdown.value = 0;
                 m_SelectedChassisIndex = 0;
                 m_ChassisDropdown.onValueChanged.AddListener(index =>
@@ -200,12 +209,17 @@ namespace TankSurvival
                     UpdatePreview();
                     UpdateKillsRequiredText();
                 });
+                Debug.Log($"[GameUIHandler] ChassisDropdown заполнен: {m_UnlockedChassisNames.Count} опций");
+            }
+            else if (m_ChassisDropdown != null)
+            {
+                Debug.LogWarning($"[GameUIHandler] ChassisDropdown назначен, но нет разблокированных опций (count={m_UnlockedChassisNames.Count})");
             }
 
-            if (m_TurretDropdown != null && m_UnlockedTurretOptions.Count > 0)
+            if (m_TurretDropdown != null && m_UnlockedTurretNames.Count > 0)
             {
                 m_TurretDropdown.ClearOptions();
-                m_TurretDropdown.AddOptions(m_UnlockedTurretOptions);
+                m_TurretDropdown.AddOptions(m_UnlockedTurretNames);
                 m_TurretDropdown.value = 0;
                 m_SelectedTurretIndex = 0;
                 m_TurretDropdown.onValueChanged.AddListener(index =>
@@ -214,6 +228,11 @@ namespace TankSurvival
                     UpdatePreview();
                     UpdateKillsRequiredText();
                 });
+                Debug.Log($"[GameUIHandler] TurretDropdown заполнен: {m_UnlockedTurretNames.Count} опций");
+            }
+            else if (m_TurretDropdown != null)
+            {
+                Debug.LogWarning($"[GameUIHandler] TurretDropdown назначен, но нет разблокированных опций (count={m_UnlockedTurretNames.Count})");
             }
 
             // Обновляем текст требований
@@ -232,16 +251,16 @@ namespace TankSurvival
             ChassisData selectedChassis = null;
             TurretData selectedTurret = null;
 
-            if (m_ChassisDropdown != null && m_ChassisDropdown.value < m_UnlockedChassisOptions.Count)
+            if (m_ChassisDropdown != null && m_ChassisDropdown.value < m_UnlockedChassisNames.Count)
             {
                 // Ищем ChassisData по имени из dropdown
-                string chassisName = m_UnlockedChassisOptions[m_ChassisDropdown.value].text;
+                string chassisName = m_UnlockedChassisNames[m_ChassisDropdown.value];
                 selectedChassis = DataCatalog.GetAllChassis().Find(c => c.displayName == chassisName);
             }
 
-            if (m_TurretDropdown != null && m_TurretDropdown.value < m_UnlockedTurretOptions.Count)
+            if (m_TurretDropdown != null && m_TurretDropdown.value < m_UnlockedTurretNames.Count)
             {
-                string turretName = m_UnlockedTurretOptions[m_TurretDropdown.value].text;
+                string turretName = m_UnlockedTurretNames[m_TurretDropdown.value];
                 selectedTurret = DataCatalog.GetAllTurrets().Find(t => t.displayName == turretName);
             }
 
@@ -267,11 +286,42 @@ namespace TankSurvival
             ChassisData selectedChassis = GetSelectedChassisData();
             TurretData selectedTurret = GetSelectedTurretData();
 
+            // T053: fallback на первый элемент каталога, а не id=0
+            if (selectedChassis == null)
+            {
+                var allChassis = DataCatalog.GetAllChassis();
+                if (allChassis.Count > 0)
+                {
+                    selectedChassis = allChassis[0];
+                    Debug.LogWarning("[GameUIHandler] Не удалось определить выбранное шасси — используется первое доступное: " + selectedChassis.displayName);
+                }
+                else
+                {
+                    Debug.LogError("[GameUIHandler] DataCatalog.GetAllChassis() пуст — нельзя начать игру!");
+                    return;
+                }
+            }
+
+            if (selectedTurret == null)
+            {
+                var allTurrets = DataCatalog.GetAllTurrets();
+                if (allTurrets.Count > 0)
+                {
+                    selectedTurret = allTurrets[0];
+                    Debug.LogWarning("[GameUIHandler] Не удалось выбрать башню — используется первая доступная: " + selectedTurret.displayName);
+                }
+                else
+                {
+                    Debug.LogError("[GameUIHandler] DataCatalog.GetAllTurrets() пуст — нельзя начать игру!");
+                    return;
+                }
+            }
+
             // Создаём PlayerData
             GameManager.PlayerData playerData = new GameManager.PlayerData()
             {
-                chassisId = selectedChassis ? selectedChassis.id : 0,
-                turretId = selectedTurret ? selectedTurret.id : 0,
+                chassisId = selectedChassis.id,
+                turretId = selectedTurret.id,
                 difficultyIndex = m_SelectedDifficultyIndex
             };
 
@@ -296,7 +346,8 @@ namespace TankSurvival
                     m_PauseAction.performed += evt => { TogglePause(); };
                     m_PauseAction.Enable();
                 }
-                m_PauseMenuButton.gameObject.SetActive(true);
+                if (m_PauseMenuButton != null)
+                    m_PauseMenuButton.gameObject.SetActive(true);
             }
         }
 
@@ -305,10 +356,10 @@ namespace TankSurvival
         /// </summary>
         private ChassisData GetSelectedChassisData()
         {
-            if (m_ChassisDropdown == null || m_ChassisDropdown.value >= m_UnlockedChassisOptions.Count)
+            if (m_ChassisDropdown == null || m_ChassisDropdown.value >= m_UnlockedChassisNames.Count)
                 return null;
 
-            string chassisName = m_UnlockedChassisOptions[m_ChassisDropdown.value].text;
+            string chassisName = m_UnlockedChassisNames[m_ChassisDropdown.value];
             return DataCatalog.GetAllChassis().Find(c => c.displayName == chassisName);
         }
 
@@ -317,10 +368,10 @@ namespace TankSurvival
         /// </summary>
         private TurretData GetSelectedTurretData()
         {
-            if (m_TurretDropdown == null || m_TurretDropdown.value >= m_UnlockedTurretOptions.Count)
+            if (m_TurretDropdown == null || m_TurretDropdown.value >= m_UnlockedTurretNames.Count)
                 return null;
 
-            string turretName = m_UnlockedTurretOptions[m_TurretDropdown.value].text;
+            string turretName = m_UnlockedTurretNames[m_TurretDropdown.value];
             return DataCatalog.GetAllTurrets().Find(t => t.displayName == turretName);
         }
 
