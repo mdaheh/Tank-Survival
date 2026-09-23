@@ -1,16 +1,12 @@
 using UnityEngine;
 
-public class TurretMountPoint : MonoBehaviour
+namespace TankSurvival
 {
-    // Start is called once before the first execution of Update after the MonoBehaviour is created
-    void Start()
+    /// <summary>
+    /// Маркер-компонент точки монтажа турели на префабе шасси.
+    /// Потребители ищут через GetComponentInChildren&lt;TurretMountPoint&gt;().
+    /// </summary>
+    public class TurretMountPoint : MonoBehaviour
     {
-        
-    }
-
-    // Update is called once per frame
-    void Update()
-    {
-        
     }
 }

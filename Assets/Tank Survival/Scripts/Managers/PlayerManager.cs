@@ -57,8 +57,13 @@ namespace TankSurvival
 
             TurretMountPoint turretMount = m_Instance.GetComponentInChildren<TurretMountPoint>();
 
-            // Найти TurretPos на теле танка
-            Transform turretPos = turretMount != null ? turretMount.transform : null;
+            if (turretMount == null)
+            {
+                Debug.LogError($"[PlayerManager] На шасси '{chassisData.name}' не найден TurretMountPoint! Турель не будет смонтирована.");
+                return;
+            }
+
+            Transform turretPos = turretMount.transform;
 
             // Инстанцировать башню
             if (turretData != null && turretData.prefab != null)

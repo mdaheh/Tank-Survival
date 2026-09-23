@@ -76,7 +76,7 @@ namespace TankSurvival
                 }
                 else
                 {
-                    Debug.LogWarning("PlayerPreview: На шасси не найден объект 'TurretMount' для крепления башни!");
+                    Debug.LogWarning("PlayerPreview: На шасси не найден TurretMountPoint для крепления башни!");
                 }
             }
 

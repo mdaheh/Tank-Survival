@@ -9,7 +9,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1275890844549483826}
-  - component: {fileID: 5630527162121880477}
+  - component: {fileID: 2585823277053199323}
   m_Layer: 0
   m_Name: TurretMount
   m_TagString: Untagged
@@ -32,7 +32,7 @@ Transform:
   m_Children: []
   m_Father: {fileID: 1031207610242063008}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &5630527162121880477
+--- !u!114 &2585823277053199323
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -102,8 +102,73 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: -8679921383154817045, guid: aba55ef12a973f846a6d92dc861f4808, type: 3}
       insertIndex: -1
       addedObject: {fileID: 1275890844549483826}
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: aba55ef12a973f846a6d92dc861f4808, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 4275467282773062429}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: aba55ef12a973f846a6d92dc861f4808, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 3963999404954445439}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: aba55ef12a973f846a6d92dc861f4808, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 5556367585182174881}
   m_SourcePrefab: {fileID: 100100000, guid: aba55ef12a973f846a6d92dc861f4808, type: 3}
+--- !u!1 &361490248449392666 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: aba55ef12a973f846a6d92dc861f4808, type: 3}
+  m_PrefabInstance: {fileID: 704018011930312011}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &4275467282773062429
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 361490248449392666}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9ebdf30e74a0c65478e737ea47a6b433, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TankSurvival.TankInputUser
+  m_ActionAsset: {fileID: -944628639613478452, guid: f2342f88e6e8e05489a14a520583e9b0, type: 3}
+--- !u!114 &3963999404954445439
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 361490248449392666}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 34b7f7299752efd4082635cf9ab48c8c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TankSurvival.PlayerMovement
+  m_Speed: 12
+  m_TurnSpeed: 180
+  m_IsDirectControl: 0
+  m_MovementAudio: {fileID: 0}
+  m_EngineIdling: {fileID: 0}
+  m_EngineDriving: {fileID: 0}
+  m_PitchRange: 0.2
+--- !u!114 &5556367585182174881
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 361490248449392666}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 030896d0325fa3e4d8d7d4cfe2351cb2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TankSurvival.TankHealth
+  m_StartingHealth: 100
+  m_Slider: {fileID: 0}
+  m_FillImage: {fileID: 0}
+  m_FullHealthColor: {r: 0, g: 1, b: 0, a: 1}
+  m_ZeroHealthColor: {r: 1, g: 0, b: 0, a: 1}
+  m_ExplosionPrefab: {fileID: 151086, guid: 6bc6d0dd8b8428e4ca316513f2cf13c6, type: 3}
+  m_HasShield: 0
 --- !u!4 &1031207610242063008 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: aba55ef12a973f846a6d92dc861f4808, type: 3}

@@ -75,6 +75,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 1d0955276d763f44ca682649621c2866, type: 3}
       insertIndex: -1
       addedObject: {fileID: 6620757926475404558}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 1d0955276d763f44ca682649621c2866, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 6188317679140469480}
   m_SourcePrefab: {fileID: 100100000, guid: 1d0955276d763f44ca682649621c2866, type: 3}
 --- !u!1 &6286968234082687938 stripped
 GameObject:
@@ -178,3 +181,17 @@ MonoBehaviour:
   m_ZeroHealthColor: {r: 1, g: 0, b: 0, a: 1}
   m_ExplosionPrefab: {fileID: 0}
   m_HasShield: 0
+--- !u!114 &6188317679140469480
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6286968234082687938}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f2b8ffd2ace802344bcf2430b6fed8ae, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TankSurvival.ContactDamage
+  m_Damage: 10
+  m_Cooldown: 0.5

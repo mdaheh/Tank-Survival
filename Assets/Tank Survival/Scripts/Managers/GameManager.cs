@@ -47,6 +47,9 @@ namespace TankSurvival
         [Header("UI Scripts")]
         public RoundEndUI m_RoundEndUI;                // Скрипт экрана окончания раунда
 
+        private TankHealth m_PlayerHealth;              // Ссылка на здоровье игрока (для события смерти)
+        private bool m_IsVictory;                       // true = победа (3 волны пройдены), false = поражение (смерть игрока)
+
 
         // --- Состояние ---
         private GameState m_CurrentState;
@@ -149,6 +152,13 @@ namespace TankSurvival
 
             m_PlayerManager.Setup();
 
+            // Подписываемся на смерть игрока
+            m_PlayerHealth = m_PlayerManager.m_Instance.GetComponent<TankHealth>();
+            if (m_PlayerHealth != null)
+            {
+                m_PlayerHealth.OnDeathEvent += OnPlayerDied;
+            }
+
             // Устанавливаем камеру на танк
             SetCameraTarget();
 
@@ -229,6 +239,7 @@ namespace TankSurvival
             // Проверяем, все ли волны пройдены
             if (m_CurrentWaveNumber > TOTAL_WAVES)
             {
+                m_IsVictory = true;
                 EndRound();
             }
             else
@@ -236,6 +247,15 @@ namespace TankSurvival
                 // Начинаем следующую волну через паузу
                 Invoke(nameof(StartNextWave), 3f); // 3 секунды паузы
             }
+        }
+
+        /// <summary>
+        /// Обработка смерти игрока — немедленное поражение
+        /// </summary>
+        private void OnPlayerDied()
+        {
+            m_IsVictory = false;
+            EndRound();
         }
 
         /// <summary>
@@ -270,7 +290,7 @@ namespace TankSurvival
 
             // Показываем экран окончания раунда через RoundEndUI
             if (m_RoundEndUI != null)
-                m_RoundEndUI.ShowRoundEnd(m_PlayerProgress, m_CurrentDifficultyIndex);
+                m_RoundEndUI.ShowRoundEnd(m_PlayerProgress, m_CurrentDifficultyIndex, m_IsVictory);
             else if (m_RoundEndPanel != null)
                 m_RoundEndPanel.SetActive(true);
         }
@@ -280,19 +300,7 @@ namespace TankSurvival
         /// </summary>
         public void StartNewRound()
         {
-            // Скрываем панель окончания раунда
-            if (m_RoundEndPanel != null)
-                m_RoundEndPanel.SetActive(false);
-
-            // Сбрасываем состояние — без перезагрузки сцены
-            m_CurrentState = GameState.MainMenu;
-            m_CurrentWaveNumber = 1;
-
-            // Показываем меню выбора сложности
-            if (m_DifficultyPanel != null)
-                m_DifficultyPanel.SetActive(true);
-
-            Debug.Log("[GameManager] Новый раунд начат без перезагрузки сцены");
+            FullReset();
         }
 
         /// <summary>
@@ -300,19 +308,65 @@ namespace TankSurvival
         /// </summary>
         public void GoToHangar()
         {
+            FullReset();
+        }
+
+        /// <summary>
+        /// Полный сброс состояния без перезагрузки сцены
+        /// </summary>
+        private void FullReset()
+        {
             // Скрываем панель окончания раунда
             if (m_RoundEndPanel != null)
                 m_RoundEndPanel.SetActive(false);
 
-            // Сбрасываем состояние — без перезагрузки сцены
+            // 1. Останавливаем волны и чистим врагов
+            if (m_WaveManager != null)
+            {
+                m_WaveManager.ForceEndWave();
+                m_WaveManager.ClearWaveEnemies();
+                // Отписываемся от всех слушателей
+                m_WaveManager.OnEnemyDied.RemoveAllListeners();
+                m_WaveManager.OnWaveCompleted.RemoveAllListeners();
+            }
+
+            // 2. Деспавн танка игрока
+            if (m_PlayerManager != null)
+            {
+                m_PlayerManager.DisableControl();
+                
+                // Отписываемся от события смерти
+                if (m_PlayerHealth != null)
+                {
+                    m_PlayerHealth.OnDeathEvent -= OnPlayerDied;
+                    m_PlayerHealth = null;
+                }
+                
+                if (m_PlayerManager.m_Instance != null)
+                {
+                    UnityEngine.Object.Destroy(m_PlayerManager.m_Instance);
+                    m_PlayerManager.m_Instance = null;
+                }
+                if (m_PlayerManager.m_TurretInstance != null)
+                {
+                    UnityEngine.Object.Destroy(m_PlayerManager.m_TurretInstance);
+                    m_PlayerManager.m_TurretInstance = null;
+                }
+            }
+
+            // 3. Сброс состояния игры
             m_CurrentState = GameState.MainMenu;
             m_CurrentWaveNumber = 1;
+            m_PlayerProgress.ResetSession();
 
-            // Показываем меню выбора сложности
+            // 4. Показываем меню выбора сложности
             if (m_DifficultyPanel != null)
                 m_DifficultyPanel.SetActive(true);
 
-            Debug.Log("[GameManager] Возврат в ангар без перезагрузки сцены");
+            // 5. Сбрасываем HUD
+            UpdateUI();
+
+            Debug.Log("[GameManager] Полный сброс выполнен");
         }
 
         /// <summary>

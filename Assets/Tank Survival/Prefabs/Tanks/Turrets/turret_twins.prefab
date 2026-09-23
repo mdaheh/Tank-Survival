@@ -123,8 +123,39 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: -8679921383154817045, guid: 3d04832ef03eef340ba3b99804ca9c5f, type: 3}
       insertIndex: 1
       addedObject: {fileID: 15739188003175176}
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 3d04832ef03eef340ba3b99804ca9c5f, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: -2609992500003226760}
   m_SourcePrefab: {fileID: 100100000, guid: 3d04832ef03eef340ba3b99804ca9c5f, type: 3}
+--- !u!1 &1211591173188078568 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: 3d04832ef03eef340ba3b99804ca9c5f, type: 3}
+  m_PrefabInstance: {fileID: 2022404379206940345}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &-2609992500003226760
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1211591173188078568}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8f010d818e6db3d44a8428314c1a8344, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TankSurvival.Shooting
+  m_Shell: {fileID: 5409530, guid: 008ecb1b70bec724fa2cd34255b0d8f8, type: 3}
+  m_FireTransform: {fileID: 6845682428796469411}
+  m_ShootingAudio: {fileID: 0}
+  m_FireClip: {fileID: 0}
+  enemyMask:
+    serializedVersion: 2
+    m_Bits: 2048
+  aimPosition: {fileID: 0}
+  currentGun: {fileID: 0}
+  m_ShotCooldown: 0.3
+  fireRange: 10
 --- !u!4 &1989394131669979474 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 3d04832ef03eef340ba3b99804ca9c5f, type: 3}

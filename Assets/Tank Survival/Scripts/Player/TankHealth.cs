@@ -21,6 +21,12 @@ namespace TankSurvival
         private float m_ShieldValue;                        // Percentage of reduced damage when the tank has a shield.
         private bool m_IsInvincible;                        // Is the tank invincible in this moment?
 
+        /// <summary>
+        /// Событие смерти — вызывается в OnDeath, когда здоровье падает до 0.
+        /// Используется вместо EnemyDeathListener для подписки на смерть врагов.
+        /// </summary>
+        public event System.Action OnDeathEvent;
+
         private void Awake ()
         {
             if (m_ExplosionPrefab != null)
@@ -161,6 +167,9 @@ namespace TankSurvival
             // Set the flag so that this function is only called once.
             m_Dead = true;
 
+            // Вызываем событие смерти — слушатели узнают, что объект уничтожен
+            OnDeathEvent?.Invoke();
+
             if (m_ExplosionParticles != null)
             {
                 m_ExplosionParticles.transform.position = transform.position;
@@ -172,6 +181,7 @@ namespace TankSurvival
                 m_ExplosionAudio.Play();
 
             // Turn the tank off.
+            // НЕ Destroy — объект может быть из пула. SetActive(false) позволяет вернуть его.
             gameObject.SetActive (false);
         }
     }

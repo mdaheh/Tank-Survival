@@ -1,5 +1,4 @@
 using UnityEngine;
-using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 namespace TankSurvival
@@ -17,8 +16,13 @@ namespace TankSurvival
         public Button m_SelectTankButton;               // Reference to the button that go back to tank selection
         public Button m_QuitButton;                     // Reference to the button that quit the Game
 
+        private GameManager m_GameManager;              // Ссылка на GameManager для полного сброса
+
         public void Init()
         {
+            // Получаем ссылку на GameManager
+            m_GameManager = FindObjectOfType<GameManager>();
+
             // Setup clicking on the back button on the Control Screen disabling the Control Screen and re-enabling the pause menu buttons
             m_ControlMenuBackButton.onClick.AddListener(() =>
             {
@@ -35,11 +39,18 @@ namespace TankSurvival
                 m_PauseMenuButtonsRoot.gameObject.SetActive(false);
             });
 
-            // Setup clicking on the Tank Selection button reloading the scene (effectively sending back to the main menu)
+            // Setup clicking on the Tank Selection button — полный сброс через GameManager (без перезагрузки сцены)
             m_SelectTankButton.onClick.AddListener(() =>
             {
                 Time.timeScale = 1.0f;
-                SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
+                if (m_GameManager != null)
+                {
+                    m_GameManager.StartNewRound();
+                }
+                else
+                {
+                    Debug.LogWarning("[PauseMenu] GameManager не найден на сцене!");
+                }
             });
 
             // If the application is the editor or a web build, quitting the game is impossible...

@@ -77,9 +77,18 @@ namespace TankSurvival
         /// <summary>
         /// Показать панель с результатами
         /// </summary>
-        public void ShowRoundEnd(PlayerProgress progress, int currentDifficultyIndex)
+        /// <param name="progress">Прогресс игрока</param>
+        /// <param name="currentDifficultyIndex">Индекс сложности</param>
+        /// <param name="isVictory">Победа (true) или поражение (false)</param>
+        public void ShowRoundEnd(PlayerProgress progress, int currentDifficultyIndex, bool isVictory = true)
         {
             if (m_Panel == null) return;
+
+            // Обновляем заголовок — Победа или Поражение
+            if (m_RoundCompleteText != null)
+            {
+                m_RoundCompleteText.text = isVictory ? "Победа!" : "Поражение!";
+            }
 
             // Обновляем статистику
             if (m_TotalKillsText != null)
@@ -97,7 +106,7 @@ namespace TankSurvival
             // Показываем панель
             m_Panel.SetActive(true);
 
-            Debug.Log("[RoundEndUI] Раунд завершён. Статистика обновлена.");
+            Debug.Log($"[RoundEndUI] Раунд завершён. Победа: {isVictory}. Статистика обновлена.");
         }
 
         /// <summary>

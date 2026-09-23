@@ -31,6 +31,9 @@ namespace TankSurvival
 
         private bool m_WaveActive;
         private DifficultyData m_CurrentDifficulty;
+        
+        // Список инстансов врагов текущей волны — для чистки и пула в Ф1/T023
+        private readonly List<GameObject> m_WaveEnemies = new List<GameObject>();
 
         // События
         public UnityEvent<int> OnWaveStarted;     // (waveNumber)
@@ -134,6 +137,9 @@ namespace TankSurvival
             // Случайный тип врага
             GameObject enemyPrefab = enemyPrefabs[Random.Range(0, enemyPrefabs.Length)];
             GameObject enemy = Instantiate(enemyPrefab, spawnPosition, Quaternion.identity);
+            
+            // Сохраняем ссылку для чистки
+            m_WaveEnemies.Add(enemy);
 
             // Применяем множители сложности к движению
             EnemyMovement move = enemy.GetComponent<EnemyMovement>();
@@ -142,22 +148,19 @@ namespace TankSurvival
                 move.m_Speed *= currentEnemySpeedMultiplier;
             }
 
-            // Применяем множители сложности к здоровью
+            // Применяем множители сложности к здоровью и подписываемся на смерть
             TankHealth health = enemy.GetComponent<TankHealth>();
-            if (health)
+            if (health != null)
             {
                 health.m_StartingHealth *= currentEnemyHealthMultiplier;
                 health.ResetHealth(); // Пересчитать текущее здоровье
+                health.OnDeathEvent += HandleEnemyDeath;
             }
 
             // Указываем врагу, кто игрок
             EnemyAI ai = enemy.GetComponent<EnemyAI>();
             if (ai != null)
                 ai.SetPlayer(playerTransform);
-
-            // Подписываемся на смерть врага
-            var listener = enemy.AddComponent<EnemyDeathListener>();
-            listener.OnDeath.AddListener(HandleEnemyDeath);
 
             OnEnemySpawned?.Invoke(enemiesRemaining, enemiesToSpawn);
         }
@@ -213,18 +216,24 @@ namespace TankSurvival
             else
                 spawnTimer = 0f;
         }
-    }
 
-    /// <summary>
-    /// Вспомогательный компонент — подписывается на смерть врага и сообщает WaveManager
-    /// </summary>
-    public class EnemyDeathListener : MonoBehaviour
-    {
-        public UnityEvent OnDeath;
-
-        private void OnDestroy()
+        /// <summary>
+        /// Очистить все инстансы врагов, созданные в текущей волне
+        /// </summary>
+        public void ClearWaveEnemies()
         {
-            OnDeath?.Invoke();
+            for (int i = 0; i < m_WaveEnemies.Count; i++)
+            {
+                if (m_WaveEnemies[i] != null)
+                {
+                    UnityEngine.Object.Destroy(m_WaveEnemies[i]);
+                }
+            }
+            m_WaveEnemies.Clear();
+            
+            enemiesRemaining = 0;
+            enemiesToSpawn = 0;
+            m_WaveActive = false;
         }
     }
 }

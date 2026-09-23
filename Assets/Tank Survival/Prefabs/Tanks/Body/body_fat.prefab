@@ -102,8 +102,73 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: -8679921383154817045, guid: 86eceb0d0ea40c8499aa327b950bb013, type: 3}
       insertIndex: -1
       addedObject: {fileID: 6436146240758822349}
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 86eceb0d0ea40c8499aa327b950bb013, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 3292974756023120065}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 86eceb0d0ea40c8499aa327b950bb013, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 5588029973416747145}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 86eceb0d0ea40c8499aa327b950bb013, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 574597479304954000}
   m_SourcePrefab: {fileID: 100100000, guid: 86eceb0d0ea40c8499aa327b950bb013, type: 3}
+--- !u!1 &6978899660574779875 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: 86eceb0d0ea40c8499aa327b950bb013, type: 3}
+  m_PrefabInstance: {fileID: 7789927260490454194}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &3292974756023120065
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6978899660574779875}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9ebdf30e74a0c65478e737ea47a6b433, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TankSurvival.TankInputUser
+  m_ActionAsset: {fileID: -944628639613478452, guid: f2342f88e6e8e05489a14a520583e9b0, type: 3}
+--- !u!114 &5588029973416747145
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6978899660574779875}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 34b7f7299752efd4082635cf9ab48c8c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TankSurvival.PlayerMovement
+  m_Speed: 12
+  m_TurnSpeed: 180
+  m_IsDirectControl: 0
+  m_MovementAudio: {fileID: 0}
+  m_EngineIdling: {fileID: 0}
+  m_EngineDriving: {fileID: 0}
+  m_PitchRange: 0.2
+--- !u!114 &574597479304954000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6978899660574779875}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 030896d0325fa3e4d8d7d4cfe2351cb2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TankSurvival.TankHealth
+  m_StartingHealth: 100
+  m_Slider: {fileID: 0}
+  m_FillImage: {fileID: 0}
+  m_FullHealthColor: {r: 0, g: 1, b: 0, a: 1}
+  m_ZeroHealthColor: {r: 1, g: 0, b: 0, a: 1}
+  m_ExplosionPrefab: {fileID: 151086, guid: 6bc6d0dd8b8428e4ca316513f2cf13c6, type: 3}
+  m_HasShield: 0
 --- !u!4 &7751214956520354649 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 86eceb0d0ea40c8499aa327b950bb013, type: 3}
