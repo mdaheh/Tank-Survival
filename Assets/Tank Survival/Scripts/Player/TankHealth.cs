@@ -3,7 +3,7 @@ using UnityEngine.UI;
 
 namespace TankSurvival
 {
-    public class TankHealth : MonoBehaviour
+    public class TankHealth : MonoBehaviour, IDamageable
     {
         public float m_StartingHealth = 100f;               // The amount of health each tank starts with.
         public Slider m_Slider;                             // The slider to represent how much health the tank currently has.
@@ -26,6 +26,18 @@ namespace TankSurvival
         /// Используется вместо EnemyDeathListener для подписки на смерть врагов.
         /// </summary>
         public event System.Action OnDeathEvent;
+
+        // T020: реализация IDamageable — урон по площади (ShellExplosion) идёт через интерфейс.
+        // Имя события не меняем на DeathEvent: подписка GameManager.OnPlayerDied остаётся как есть.
+        public float CurrentHealth => m_CurrentHealth;
+        public float MaxHealth => m_StartingHealth;
+        public bool IsAlive => !m_Dead;
+
+        event System.Action IDamageable.DeathEvent
+        {
+            add { OnDeathEvent += value; }
+            remove { OnDeathEvent -= value; }
+        }
 
         // T019: статы забега — максимальное здоровье читается отсюда
         private StatBlock m_StatBlock;

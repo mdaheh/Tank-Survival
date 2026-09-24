@@ -40,6 +40,8 @@ namespace TankSurvival
 
         // T064: кэш Transform цели (избегаем GetComponent в Update)
         private Transform m_TargetTransform;
+        // T020: кэш IDamageable цели (вместо Rigidbody + TankHealth)
+        private IDamageable m_TargetDamageable;
 
         void Awake()
         {
@@ -91,7 +93,7 @@ namespace TankSurvival
             }
 
             // T064: поворот турели к цели
-            if (currentTarget && m_TargetTransform != null)
+            if (m_TargetDamageable != null && m_TargetTransform != null)
             {
                 Vector3 dir = m_TargetTransform.position - currentGun.transform.position;
                 dir.y = 0; // только вокруг Y
@@ -113,7 +115,7 @@ namespace TankSurvival
             }
 
             // Стреляем, если есть цель и кулдаун прошёл
-            if (!m_Fired && currentTarget)
+            if (!m_Fired && m_TargetDamageable != null)
             {
                 Fire();
             }
@@ -126,21 +128,20 @@ namespace TankSurvival
         {
             Collider[] colliders = Physics.OverlapSphere(transform.position, fireRange, enemyMask);
             closestDist = float.MaxValue;
-            currentTarget = null;
+            m_TargetDamageable = null;
             m_TargetTransform = null;
 
             for (int i = 0; i < colliders.Length; i++)
             {
-                Rigidbody targetRigidbody = colliders[i].GetComponent<Rigidbody>();
-                TankHealth targetHealth = targetRigidbody.GetComponent<TankHealth>();
                 Transform targetTransform = colliders[i].transform;
+                IDamageable targetDamageable = colliders[i].GetComponent<IDamageable>();
 
-                if (!targetHealth) continue;
+                if (targetDamageable == null) continue;
 
                 float dist = (targetTransform.position - transform.position).sqrMagnitude;
                 if (dist <= closestDist)
                 {
-                    currentTarget = targetRigidbody;
+                    m_TargetDamageable = targetDamageable;
                     m_TargetTransform = targetTransform; // T064: кэшируем Transform
                     closestDist = dist;
                     aimPosition = m_FireTransform;

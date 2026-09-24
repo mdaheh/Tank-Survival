@@ -146,13 +146,12 @@ namespace TankSurvival
                 move.m_Speed *= currentEnemySpeedMultiplier;
             }
 
-            // Применяем множители сложности к здоровью и подписываемся на смерть
-            TankHealth health = enemy.GetComponent<TankHealth>();
+            // Применяем множитель сложности к здоровью и подписываемся на смерть (T020: враги перешли на EnemyHealth)
+            EnemyHealth health = enemy.GetComponent<EnemyHealth>();
             if (health != null)
             {
-                health.m_StartingHealth *= currentEnemyHealthMultiplier;
-                health.ResetHealth(); // Пересчитать текущее здоровье
-                health.OnDeathEvent += HandleEnemyDeath;
+                health.ApplyHealthMultiplier(currentEnemyHealthMultiplier);
+                health.DeathEvent += HandleEnemyDeath;
             }
 
             // Указываем врагу, кто игрок

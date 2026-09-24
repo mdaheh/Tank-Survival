@@ -74,10 +74,10 @@ PrefabInstance:
       addedObject: {fileID: 2039356695358278719}
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 1d0955276d763f44ca682649621c2866, type: 3}
       insertIndex: -1
-      addedObject: {fileID: 6620757926475404558}
+      addedObject: {fileID: 6188317679140469480}
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 1d0955276d763f44ca682649621c2866, type: 3}
       insertIndex: -1
-      addedObject: {fileID: 6188317679140469480}
+      addedObject: {fileID: 2579299447076586907}
   m_SourcePrefab: {fileID: 100100000, guid: 1d0955276d763f44ca682649621c2866, type: 3}
 --- !u!1 &6286968234082687938 stripped
 GameObject:
@@ -162,25 +162,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 76b22a2b23ac0bb44b1820c4f5652d1d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TankSurvival.EnemyAI
---- !u!114 &6620757926475404558
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6286968234082687938}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 030896d0325fa3e4d8d7d4cfe2351cb2, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::TankSurvival.TankHealth
-  m_StartingHealth: 100
-  m_Slider: {fileID: 0}
-  m_FillImage: {fileID: 0}
-  m_FullHealthColor: {r: 0, g: 1, b: 0, a: 1}
-  m_ZeroHealthColor: {r: 1, g: 0, b: 0, a: 1}
-  m_ExplosionPrefab: {fileID: 0}
-  m_HasShield: 0
 --- !u!114 &6188317679140469480
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -195,3 +176,16 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::TankSurvival.ContactDamage
   m_Damage: 10
   m_Cooldown: 0.5
+--- !u!114 &2579299447076586907
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6286968234082687938}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 98f1de9781d3f40488bd3bf1433a2244, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TankSurvival.EnemyHealth
+  m_StartingHealth: 100
