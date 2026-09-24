@@ -151,6 +151,9 @@ namespace TankSurvival
                 return;
             }
 
+            // T019: передаём StatBlock забега до сборки танка — итоговые статы читаются из него
+            m_PlayerManager.SetStatBlock(m_RunContext != null ? m_RunContext.statBlock : null);
+
             m_PlayerManager.SpawnTank(
                 m_CurrentPlayerData.chassisId,
                 m_CurrentPlayerData.turretId,

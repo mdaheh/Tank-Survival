@@ -6,7 +6,7 @@ namespace TankSurvival
     /// <summary>
     /// Движение игрока — использует новый Input System.
     /// Управление: WASD (W=вперёд, S=назад, A=поворот влево, D=поворот вправо).
-    /// Поддерживает бонусы от улучшений через компонент MovementData.
+    /// Итоговые скорость и поворот читаются из StatBlock забега (T019).
     /// </summary>
     public class PlayerMovement : MonoBehaviour
     {
@@ -32,13 +32,31 @@ namespace TankSurvival
 
         private Vector3 m_RequestedDirection;       // В режиме Direct Control — направление движения
 
-        // Компонент бонусов от улучшений
-        private MovementData m_MovementData;
+        // T019: статы забега — итоговые скорость/поворот читаются отсюда
+        private StatBlock m_StatBlock;
 
         private void Awake()
         {
             m_Rigidbody = GetComponent<Rigidbody>();
-            m_MovementData = GetComponent<MovementData>();
+        }
+
+        /// <summary>
+        /// T019: принять StatBlock забега.
+        /// </summary>
+        public void SetStatBlock(StatBlock statBlock)
+        {
+            m_StatBlock = statBlock;
+        }
+
+        /// <summary>
+        /// T019: пересчитать итоговые скорость и поворот (база из данных + модификаторы).
+        /// </summary>
+        public void RefreshStats()
+        {
+            if (m_StatBlock == null) return;
+
+            m_Speed = m_StatBlock.GetMoveSpeed();
+            m_TurnSpeed = m_StatBlock.GetTurnSpeed();
         }
 
         private void OnEnable()
@@ -177,14 +195,7 @@ namespace TankSurvival
                 speedInput = m_MovementInput.y;
             }
 
-            // Применяем бонусы от улучшений
-            float speedMultiplier = 1f;
-            if (m_MovementData != null)
-            {
-                speedMultiplier = 1f + m_MovementData.speedBonus / 100f;
-            }
-
-            Vector3 movement = transform.forward * speedInput * m_Speed * speedMultiplier;
+            Vector3 movement = transform.forward * speedInput * m_Speed;
 
             m_Rigidbody.linearVelocity = movement + m_ExplosionForceValue;
             m_ExplosionForceValue = Vector3.Lerp(m_ExplosionForceValue, Vector3.zero, Time.deltaTime * 3f);
@@ -198,14 +209,7 @@ namespace TankSurvival
             {
                 float angleTowardTarget = Vector3.SignedAngle(m_RequestedDirection, transform.forward, transform.up);
 
-                // Применяем бонусы от улучшений
-                float turnSpeedMultiplier = 1f;
-                if (m_MovementData != null)
-                {
-                    turnSpeedMultiplier = 1f + m_MovementData.turnSpeedBonus / 100f;
-                }
-
-                float maxTurn = m_TurnSpeed * Time.deltaTime * turnSpeedMultiplier;
+                float maxTurn = m_TurnSpeed * Time.deltaTime;
                 float rotatingAngle = Mathf.Sign(angleTowardTarget) * Mathf.Min(Mathf.Abs(angleTowardTarget), maxTurn);
                 turnRotation = Quaternion.AngleAxis(-rotatingAngle, Vector3.up);
             }

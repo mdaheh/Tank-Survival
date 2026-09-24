@@ -27,6 +27,37 @@ namespace TankSurvival
         /// </summary>
         public event System.Action OnDeathEvent;
 
+        // T019: статы забега — максимальное здоровье читается отсюда
+        private StatBlock m_StatBlock;
+
+        /// <summary>
+        /// T019: принять StatBlock забега.
+        /// </summary>
+        public void SetStatBlock(StatBlock statBlock)
+        {
+            m_StatBlock = statBlock;
+        }
+
+        /// <summary>
+        /// T019: пересчитать максимальное здоровье из StatBlock, сохранив текущий процент HP.
+        /// Вызывается после спавна (пока m_StartingHealth — из префаба) и после улучшения.
+        /// </summary>
+        public void RefreshStats()
+        {
+            if (m_StatBlock == null) return;
+
+            float healthPercentage = m_StartingHealth > 0f ? m_CurrentHealth / m_StartingHealth : 1f;
+            m_StartingHealth = m_StatBlock.GetMaxHealth();
+
+            if (!m_Dead)
+                m_CurrentHealth = m_StartingHealth * healthPercentage;
+
+            if (m_Slider != null)
+                m_Slider.maxValue = m_StartingHealth;
+
+            SetHealthUI();
+        }
+
         private void Awake ()
         {
             if (m_ExplosionPrefab != null)

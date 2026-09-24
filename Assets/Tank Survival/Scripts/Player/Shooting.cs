@@ -4,7 +4,7 @@ namespace TankSurvival
 {
     /// <summary>
     /// Стрельба башни — автоматический поиск цели и стрельба.
-    /// Поддерживает бонусы от улучшений через компонент ShootingData.
+    /// Итоговые урон и перезарядка читаются из StatBlock забега (T019).
     /// </summary>
     public class Shooting : MonoBehaviour
     {
@@ -31,8 +31,8 @@ namespace TankSurvival
         private bool m_Fired;
         private float closestDist = float.MaxValue;
 
-        // Компонент бонусов от улучшений
-        private ShootingData m_ShootingData;
+        // T019: статы забега — итоговые урон/перезарядка читаются отсюда
+        private StatBlock m_StatBlock;
 
         // Оптимизация: ищем новую цель не каждый кадр, а раз в N секунд
         private float m_LastTargetSearch = 0f;
@@ -43,13 +43,30 @@ namespace TankSurvival
 
         void Awake()
         {
-            m_ShootingData = GetComponent<ShootingData>();
-
             // T064: назначить currentGun если не назначен
             if (currentGun == null)
             {
                 currentGun = transform.gameObject;
             }
+        }
+
+        /// <summary>
+        /// T019: принять StatBlock забега.
+        /// </summary>
+        public void SetStatBlock(StatBlock statBlock)
+        {
+            m_StatBlock = statBlock;
+        }
+
+        /// <summary>
+        /// T019: пересчитать итоговый урон и перезарядку (база из данных + модификаторы).
+        /// </summary>
+        public void RefreshStats()
+        {
+            if (m_StatBlock == null) return;
+
+            m_Damage = m_StatBlock.GetDamage();
+            m_ShotCooldown = m_StatBlock.GetFireRate();
         }
 
         // Update is called once per frame
@@ -143,13 +160,7 @@ namespace TankSurvival
                 shellExp.m_MaxDamage = m_Damage; // TODO T024: переедет в StatBlock/Projectile
             }
 
-            // Применяем бонусы от улучшений к скорости снаряда
             float shellSpeed = 20f;
-            if (m_ShootingData != null && m_ShootingData.damageBonus > 0)
-            {
-                // damageBonus влияет на урон, а не скорость — это обрабатывается в ShellExplosion
-            }
-
             shellInstance.linearVelocity = shellSpeed * m_FireTransform.forward;
 
             m_ShotCooldownTimer = m_ShotCooldown;

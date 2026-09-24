@@ -27,6 +27,14 @@ namespace TankSurvival
         private Shooting m_Shooting;                            // Reference to turret's shooting script
         private GameObject m_CanvasGameObject;                  // Used to disable the world space UI during the Starting and Ending phases of each round.
 
+        // T019: статы забега — единственный источник итоговых значений (владелец — RunContext)
+        private StatBlock m_StatBlock;
+
+        // T019: кэш компонентов, чтобы после улучшения пересчитать значения без поиска по сцене
+        private PlayerMovement m_CachedMovement;
+        private Shooting m_CachedShooting;
+        private TankHealth m_CachedHealth;
+
         private void Awake()
         {
             // Singleton pattern
@@ -40,6 +48,32 @@ namespace TankSurvival
 
         public static PlayerManager Instance { get; private set; }
 
+        /// <summary>
+        /// T019: принять StatBlock забега. Вызывается GameManager до SpawnTank.
+        /// </summary>
+        public void SetStatBlock(StatBlock statBlock)
+        {
+            m_StatBlock = statBlock;
+        }
+
+        /// <summary>
+        /// T019: статы забега — сюда пишут улучшения, отсюда читают компоненты танка.
+        /// </summary>
+        public StatBlock Stats => m_StatBlock;
+
+        /// <summary>
+        /// T019: пересчитать итоговые значения компонентов танка из StatBlock
+        /// (вызывается после применения улучшения). Без поиска по сцене и аллокаций.
+        /// </summary>
+        public void RefreshStats()
+        {
+            if (m_StatBlock == null) return;
+
+            if (m_CachedMovement != null) m_CachedMovement.RefreshStats();
+            if (m_CachedHealth != null) m_CachedHealth.RefreshStats();
+            if (m_CachedShooting != null) m_CachedShooting.RefreshStats();
+        }
+
         public void SpawnTank(int chassisId, int turretId, Vector3 position, Quaternion rotation)
         {
             // Получить данные из DataCatalog
@@ -49,6 +83,13 @@ namespace TankSurvival
             if (chassisData == null)
             {
                 Debug.LogError($"[PlayerManager] Шасси с ID {chassisId} не найдено в DataCatalog!");
+                return;
+            }
+
+            // T019: без StatBlock забега собрать танк нельзя — итоговые статы берутся только из него
+            if (m_StatBlock == null)
+            {
+                Debug.LogError("[PlayerManager] StatBlock забега не передан (GameManager.SpawnTank → SetStatBlock)! Танк не будет собран.");
                 return;
             }
 
@@ -81,14 +122,20 @@ namespace TankSurvival
         /// </summary>
         private void ApplyChassisStats(ChassisData chassis)
         {
+            // T019: базы из данных кладём в StatBlock — единственный источник итоговых значений
+            m_StatBlock.baseMaxHealth = chassis.maxHealth;
+            m_StatBlock.baseMoveSpeed = chassis.moveSpeed;
+            m_StatBlock.baseTurnSpeed = chassis.turnSpeed;
+
             // PlayerMovement — движение и поворот
             var movement = m_Instance.GetComponent<PlayerMovement>();
             if (movement == null)
             {
                 movement = m_Instance.AddComponent<PlayerMovement>();
             }
-            movement.m_Speed = chassis.moveSpeed;
-            movement.m_TurnSpeed = chassis.turnSpeed;
+            movement.SetStatBlock(m_StatBlock);
+            movement.RefreshStats();
+            m_CachedMovement = movement;
 
             // TankHealth — здоровье
             var health = m_Instance.GetComponent<TankHealth>();
@@ -96,7 +143,9 @@ namespace TankSurvival
             {
                 health = m_Instance.AddComponent<TankHealth>();
             }
-            health.m_StartingHealth = chassis.maxHealth;
+            health.SetStatBlock(m_StatBlock);
+            health.RefreshStats();
+            m_CachedHealth = health;
         }
 
         /// <summary>
@@ -104,15 +153,19 @@ namespace TankSurvival
         /// </summary>
         private void ApplyTurretStats(TurretData turret)
         {
+            // T019: урон и перезарядка — базы в StatBlock; улучшения добавляют модификаторы к ним
+            m_StatBlock.baseDamage = turret.damage;
+            m_StatBlock.baseFireRate = turret.fireRate;
+
             var shooting = m_TurretInstance.GetComponent<Shooting>();
             if (shooting == null)
             {
                 shooting = m_TurretInstance.AddComponent<Shooting>();
             }
-            shooting.m_ShotCooldown = turret.fireRate;
-            shooting.fireRange = turret.fireRange;
-            // T066: передаём урон из данных
-            shooting.m_Damage = turret.damage;
+            shooting.SetStatBlock(m_StatBlock);
+            shooting.fireRange = turret.fireRange; // fireRange остаётся базой из данных (в StatBlock его нет)
+            shooting.RefreshStats();
+            m_CachedShooting = shooting;
         }
         public void Setup(int controlIndex = 1)
         {

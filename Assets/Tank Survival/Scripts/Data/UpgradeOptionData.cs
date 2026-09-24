@@ -32,127 +32,64 @@ namespace TankSurvival
         public float value;  // Абсолютное значение (для урона/здоровья) или процент (для скорости)
 
         /// <summary>
-        /// Применить улучшение к танку игрока
+        /// T019: применить улучшение к статам забега (StatBlock) и пересчитать компоненты танка.
         /// </summary>
         public void ApplyToPlayer()
         {
-            // Ищем компоненты игрока напрямую (PlayerManager — не MonoBehaviour, поэтому FindObjectOfType не работает)
-            var playerMovement = FindAnyObjectByType<PlayerMovement>();
-            var shooting = FindAnyObjectByType<Shooting>();
-            var tankHealth = playerMovement ? playerMovement.GetComponent<TankHealth>() : null;
-            var shellExplosion = FindAnyObjectByType<ShellExplosion>();
+            var stats = PlayerManager.Instance != null ? PlayerManager.Instance.Stats : null;
 
-            if (!playerMovement && !shooting)
+            if (stats == null)
             {
-                Debug.LogWarning($"[UpgradeOptionData] Игровой танк не найден в сцене");
+                Debug.LogWarning($"[UpgradeOptionData] StatBlock забега недоступен — улучшение '{displayName}' не применено");
                 return;
             }
-
-            GameObject chassis = playerMovement ? playerMovement.gameObject : null;
-            GameObject turret = shooting ? shooting.gameObject : null;
 
             switch (type)
             {
                 case UpgradeType.Damage:
-                    ApplyDamage(chassis, turret, shellExplosion, shooting);
+                    // value — абсолютный урон
+                    stats.AddDamage(value);
                     break;
                 case UpgradeType.FireRate:
-                    ApplyFireRate(shooting);
+                    // value — секунды, уменьшают задержку между выстрелами
+                    stats.AddFireRate(value);
                     break;
                 case UpgradeType.MoveSpeed:
-                    ApplyMoveSpeed(playerMovement);
+                    // value — проценты от базовой скорости (см. описание ассета)
+                    stats.AddMoveSpeed(stats.baseMoveSpeed * value / 100f);
                     break;
                 case UpgradeType.TurnSpeed:
-                    ApplyTurnSpeed(playerMovement);
+                    // value — проценты от базовой скорости поворота
+                    stats.AddTurnSpeed(stats.baseTurnSpeed * value / 100f);
                     break;
                 case UpgradeType.MaxHealth:
-                    ApplyMaxHealth(tankHealth);
+                    stats.AddMaxHealth(value);
                     break;
                 case UpgradeType.ExplosionRadius:
-                    ApplyExplosionRadius(shellExplosion);
+                    ApplyExplosionRadius();
                     break;
                 case UpgradeType.ExplosionForce:
-                    ApplyExplosionForce(shellExplosion);
+                    ApplyExplosionForce();
                     break;
             }
+
+            // Пересчитываем итоговые значения на живом танке (база из данных + модификаторы)
+            PlayerManager.Instance.RefreshStats();
         }
 
-        private void ApplyDamage(GameObject chassis, GameObject turret, ShellExplosion shellExplosion, Shooting shooting)
+        private void ApplyExplosionRadius()
         {
-            if (shellExplosion)
-                shellExplosion.m_MaxDamage += value;
-
-            if (shooting)
-            {
-                if (!shooting.TryGetComponent(out ShootingData shootingData))
-                    shootingData = shooting.gameObject.AddComponent<ShootingData>();
-                shootingData.damageBonus += value;
-            }
-        }
-
-        private void ApplyFireRate(Shooting shooting)
-        {
-            if (shooting)
-            {
-                shooting.m_ShotCooldown = Mathf.Max(0.05f, shooting.m_ShotCooldown - value);
-            }
-        }
-
-        private void ApplyMoveSpeed(PlayerMovement movement)
-        {
-            if (movement)
-            {
-                if (!movement.TryGetComponent(out MovementData movementData))
-                    movementData = movement.gameObject.AddComponent<MovementData>();
-                movementData.speedBonus += value;
-            }
-        }
-
-        private void ApplyTurnSpeed(PlayerMovement movement)
-        {
-            if (movement)
-            {
-                if (!movement.TryGetComponent(out MovementData movementData))
-                    movementData = movement.gameObject.AddComponent<MovementData>();
-                movementData.turnSpeedBonus += value;
-            }
-        }
-
-        private void ApplyMaxHealth(TankHealth health)
-        {
-            if (health)
-                health.IncreaseMaxHealth(value);
-        }
-
-        private void ApplyExplosionRadius(ShellExplosion shellExplosion)
-        {
+            var shellExplosion = FindAnyObjectByType<ShellExplosion>();
             if (shellExplosion)
                 shellExplosion.m_ExplosionRadius += value;
         }
 
-        private void ApplyExplosionForce(ShellExplosion shellExplosion)
+        private void ApplyExplosionForce()
         {
+            var shellExplosion = FindAnyObjectByType<ShellExplosion>();
             if (shellExplosion)
                 shellExplosion.m_ExplosionForce += value;
         }
     }
 
-    /// <summary>
-    /// Компонент для хранения бонусов скорости движения (накапливается от улучшений)
-    /// </summary>
-    [DisallowMultipleComponent]
-    public class MovementData : MonoBehaviour
-    {
-        public float speedBonus;
-        public float turnSpeedBonus;
-    }
-
-    /// <summary>
-    /// Компонент для хранения бонусов урона (накапливается от улучшений)
-    /// </summary>
-    [DisallowMultipleComponent]
-    public class ShootingData : MonoBehaviour
-    {
-        public float damageBonus;
-    }
 }
