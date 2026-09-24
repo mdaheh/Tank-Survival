@@ -428,7 +428,11 @@ namespace TankSurvival
         /// </summary>
         private void HidePreviewAndDropdowns()
         {
-            // Скрываем превью
+            // Скрываем сценный объект превью (камера + свет)
+            if (m_TankPreview != null)
+                m_TankPreview.SetActive(false);
+
+            // Скрываем инстанс превью в меню
             if (m_PlayerPreview != null)
             {
                 m_PlayerPreview.HidePreview();
@@ -448,6 +452,10 @@ namespace TankSurvival
         /// </summary>
         public void ShowPreviewAndDropdowns()
         {
+            // Показываем сценный объект превью (камера + свет)
+            if (m_TankPreview != null)
+                m_TankPreview.SetActive(true);
+
             // Показываем превью
             if (m_PlayerPreview != null)
             {
