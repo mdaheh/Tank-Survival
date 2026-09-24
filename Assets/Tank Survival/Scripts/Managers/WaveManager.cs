@@ -77,7 +77,11 @@ namespace TankSurvival
 
             OnWaveStarted?.Invoke(currentWave);
 
-            // T022: подписка на смерть врагов через DamageSystem
+            // T022: подписка на смерть врагов через DamageSystem.
+            // Минус перед плюсом обязателен: StartWave вызывается на каждой волне,
+            // и без отписки обработчик дублируется — enemiesRemaining уменьшался бы
+            // дважды за одного убитого врага.
+            DamageSystem.OnEnemyKilled -= HandleEnemyDeath;
             DamageSystem.OnEnemyKilled += HandleEnemyDeath;
         }
 
@@ -239,6 +243,7 @@ namespace TankSurvival
             EnemyRegistry.Clear();
             // T022: отписка от DamageSystem
             DamageSystem.OnEnemyKilled -= HandleEnemyDeath;
+            DamageSystem.Clear();
             
             enemiesRemaining = 0;
             enemiesToSpawn = 0;

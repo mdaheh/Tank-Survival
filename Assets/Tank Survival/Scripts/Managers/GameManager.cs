@@ -170,6 +170,15 @@ namespace TankSurvival
                 DamageSystem.RegisterPlayer(m_PlayerHealth);
             }
 
+            // T022 (регрессия): волновые UnityEvent не трогаем — задача меняла только цепочку смертей.
+            // Без этой подписки OnWaveCompleted никто не слушает: волна не переходит дальше,
+            // счётчик волн не растёт и раунд не завершается победой.
+            if (m_WaveManager != null)
+            {
+                m_WaveManager.OnWaveCompleted.RemoveListener(OnWaveCompleted);
+                m_WaveManager.OnWaveCompleted.AddListener(OnWaveCompleted);
+            }
+
             // Устанавливаем камеру на танк
             SetCameraTarget();
 
@@ -279,12 +288,14 @@ namespace TankSurvival
                 // T022: отписка/переподписка на DamageSystem
                 DamageSystem.OnEnemyKilled -= OnEnemyKilled;
                 DamageSystem.OnPlayerKilled -= OnPlayerKilled;
+                m_WaveManager.OnWaveCompleted.RemoveListener(OnWaveCompleted);
 
                 StartWave();
 
                 // Переподписываемся
                 DamageSystem.OnEnemyKilled += OnEnemyKilled;
                 DamageSystem.OnPlayerKilled += OnPlayerKilled;
+                m_WaveManager.OnWaveCompleted.AddListener(OnWaveCompleted);
             }
         }
 
@@ -334,6 +345,11 @@ namespace TankSurvival
             // 1. Останавливаем волны и чистим врагов
             if (m_WaveManager != null)
             {
+                // T022 (регрессия): снимаем слушатель волны ДО ForceEndWave — иначе
+                // принудительное завершение волны вызовет OnWaveCompleted и запланирует
+                // следующую волну уже после сброса (спавн врагов в главном меню).
+                m_WaveManager.OnWaveCompleted.RemoveListener(OnWaveCompleted);
+
                 m_WaveManager.ForceEndWave();
                 m_WaveManager.ClearWaveEnemies();
                 // T022: отписка от DamageSystem

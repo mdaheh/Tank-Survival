@@ -24,13 +24,10 @@ namespace TankSurvival
         bool IsAlive { get; }
 
         /// <summary>
-        /// Принять урон. Вызывает DeathEvent при достижении HP = 0.
+        /// Принять урон. Смерть объекта сигналится его собственным событием
+        /// (EnemyHealth.DeathEvent / TankHealth.OnDeathEvent) — в интерфейс не выносим:
+        /// полезная нагрузка события у разных типов разная.
         /// </summary>
         void TakeDamage(float amount);
-
-        /// <summary>
-        /// Событие смерти — вызывается один раз при достижении HP = 0
-        /// </summary>
-        event System.Action DeathEvent;
     }
 }

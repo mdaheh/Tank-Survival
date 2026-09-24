@@ -18,7 +18,7 @@ namespace TankSurvival
         /// <summary>
         /// Событие смерти — вызывается один раз при достижении HP = 0
         /// </summary>
-        public event System.Action DeathEvent;
+        public event System.Action<EnemyHealth> DeathEvent;
 
         // Реализация IDamageable
         public float CurrentHealth => m_CurrentHealth;
@@ -65,7 +65,7 @@ namespace TankSurvival
         private void OnDeath()
         {
             m_Dead = true;
-            DeathEvent?.Invoke();
+            DeathEvent?.Invoke(this);
 
             // T020: прячем тело — как это делал TankHealth.OnDeath; объект остаётся в m_WaveEnemies до чистки волны
             gameObject.SetActive(false);

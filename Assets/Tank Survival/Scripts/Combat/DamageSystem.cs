@@ -11,14 +11,15 @@ namespace TankSurvival
         public static event System.Action<EnemyHealth> OnEnemyKilled;
         public static event System.Action OnPlayerKilled;
 
-        private static readonly List<(EnemyHealth, System.Action<EnemyHealth>)> s_EnemySubscriptions = new();
-        private static readonly List<(TankHealth, System.Action)> s_PlayerSubscriptions = new();
+        private static readonly List<EnemyHealth> s_EnemyList = new();
+        private static readonly List<TankHealth> s_PlayerList = new();
 
         /// <summary>
         /// Применить урон через DamageSystem
         /// </summary>
         public static void ApplyDamage(IDamageable target, float amount)
         {
+            if (target == null || !target.IsAlive) return;
             target.TakeDamage(amount);
         }
 
@@ -28,8 +29,9 @@ namespace TankSurvival
         public static void RegisterEnemy(EnemyHealth health)
         {
             if (health == null) return;
+            if (s_EnemyList.Contains(health)) return;
             health.DeathEvent += HandleEnemyDeath;
-            s_EnemySubscriptions.Add((health, HandleEnemyDeath));
+            s_EnemyList.Add(health);
         }
 
         /// <summary>
@@ -39,7 +41,7 @@ namespace TankSurvival
         {
             if (health == null) return;
             health.DeathEvent -= HandleEnemyDeath;
-            s_EnemySubscriptions.RemoveAll(s => s.Item1 == health);
+            s_EnemyList.Remove(health);
         }
 
         /// <summary>
@@ -48,8 +50,9 @@ namespace TankSurvival
         public static void RegisterPlayer(TankHealth health)
         {
             if (health == null) return;
+            if (s_PlayerList.Contains(health)) return;
             health.OnDeathEvent += HandlePlayerDeath;
-            s_PlayerSubscriptions.Add((health, HandlePlayerDeath));
+            s_PlayerList.Add(health);
         }
 
         /// <summary>
@@ -59,7 +62,7 @@ namespace TankSurvival
         {
             if (health == null) return;
             health.OnDeathEvent -= HandlePlayerDeath;
-            s_PlayerSubscriptions.RemoveAll(s => s.Item1 == health);
+            s_PlayerList.Remove(health);
         }
 
         /// <summary>
@@ -67,17 +70,20 @@ namespace TankSurvival
         /// </summary>
         public static void Clear()
         {
-            foreach (var (health, callback) in s_EnemySubscriptions)
-                health.DeathEvent -= callback;
-            s_EnemySubscriptions.Clear();
+            foreach (var health in s_EnemyList)
+                health.DeathEvent -= HandleEnemyDeath;
+            s_EnemyList.Clear();
 
-            foreach (var (health, callback) in s_PlayerSubscriptions)
-                health.OnDeathEvent -= callback;
-            s_PlayerSubscriptions.Clear();
+            foreach (var health in s_PlayerList)
+                health.OnDeathEvent -= HandlePlayerDeath;
+            s_PlayerList.Clear();
         }
 
         private static void HandleEnemyDeath(EnemyHealth health)
         {
+            // Снимаем подписку и убираем из списка сразу: иначе список живых растёт
+            // всю сессию, а при пуле (T023) повторная регистрация была бы пропущена.
+            UnregisterEnemy(health);
             OnEnemyKilled?.Invoke(health);
         }
 
