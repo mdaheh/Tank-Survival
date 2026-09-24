@@ -49,7 +49,7 @@ namespace TankSurvival
 
         private TankHealth m_PlayerHealth;              // Ссылка на здоровье игрока (для события смерти)
         private bool m_IsVictory;                       // true = победа (3 волны пройдены), false = поражение (смерть игрока)
-
+        [SerializeField] private RunContext m_RunContext; // Состояние забега (T018)
 
         // --- Состояние ---
         private GameState m_CurrentState;
@@ -118,6 +118,14 @@ namespace TankSurvival
         {
             m_CurrentState = GameState.Playing;
             m_CurrentWaveNumber = 1;
+
+            // Создаём RunContext (T018)
+            m_RunContext = new RunContext
+            {
+                selectedChassisId = m_CurrentPlayerData.chassisId,
+                selectedTurretId = m_CurrentPlayerData.turretId,
+                selectedDifficultyIndex = m_CurrentDifficultyIndex
+            };
 
             // Сброс прогресса уровня для нового раунда
             if (m_LevelManager != null)
@@ -358,6 +366,13 @@ namespace TankSurvival
             m_CurrentState = GameState.MainMenu;
             m_CurrentWaveNumber = 1;
             m_PlayerProgress.ResetSession();
+
+            // T018: сброс RunContext
+            if (m_RunContext != null)
+            {
+                m_RunContext.Reset();
+                m_RunContext = null;
+            }
 
             // 4. Показываем меню выбора сложности
             if (m_DifficultyPanel != null)
