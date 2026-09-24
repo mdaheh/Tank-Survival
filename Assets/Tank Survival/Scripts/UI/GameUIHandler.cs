@@ -148,7 +148,6 @@ namespace TankSurvival
                 return;
 
             m_SelectedDifficultyIndex = index;
-            Debug.Log($"[GameUIHandler] Выбрана сложность: {index}");
 
             // Скрываем панель сложности после выбора
             if (m_DifficultyPanel != null)
@@ -166,9 +165,6 @@ namespace TankSurvival
 
             var allChassis = DataCatalog.GetAllChassis();
             var allTurrets = DataCatalog.GetAllTurrets();
-            
-            Debug.Log($"[GameUIHandler] DataCatalog: Chassis={allChassis.Count}, Turrets={allTurrets.Count}");
-            Debug.Log($"[GameUIHandler] m_ChassisDropdown={(m_ChassisDropdown != null ? "назначен" : "NULL!")}, m_TurretDropdown={(m_TurretDropdown != null ? "назначен" : "NULL!")}");
 
             for (int i = 0; i < allChassis.Count; i++)
             {
@@ -179,7 +175,6 @@ namespace TankSurvival
                 if (isUnlocked)
                 {
                     m_UnlockedChassisNames.Add(chassis.displayName);
-                    Debug.Log($"[GameUIHandler] Разблокировано шасси: {chassis.displayName} (id={chassis.id})");
                 }
             }
 
@@ -192,7 +187,6 @@ namespace TankSurvival
                 if (isUnlocked)
                 {
                     m_UnlockedTurretNames.Add(turret.displayName);
-                    Debug.Log($"[GameUIHandler] Разблокирована башня: {turret.displayName} (id={turret.id})");
                 }
             }
 
@@ -209,7 +203,6 @@ namespace TankSurvival
                     UpdatePreview();
                     UpdateKillsRequiredText();
                 });
-                Debug.Log($"[GameUIHandler] ChassisDropdown заполнен: {m_UnlockedChassisNames.Count} опций");
             }
             else if (m_ChassisDropdown != null)
             {
@@ -228,7 +221,6 @@ namespace TankSurvival
                     UpdatePreview();
                     UpdateKillsRequiredText();
                 });
-                Debug.Log($"[GameUIHandler] TurretDropdown заполнен: {m_UnlockedTurretNames.Count} опций");
             }
             else if (m_TurretDropdown != null)
             {

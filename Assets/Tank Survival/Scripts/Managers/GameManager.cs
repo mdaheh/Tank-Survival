@@ -370,8 +370,6 @@ namespace TankSurvival
             var gameUI = FindAnyObjectByType<GameUIHandler>();
             if (gameUI != null)
                 gameUI.ShowPreviewAndDropdowns();
-
-            Debug.Log("[GameManager] Полный сброс выполнен");
         }
 
         /// <summary>
