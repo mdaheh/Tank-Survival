@@ -163,11 +163,11 @@ namespace TankSurvival
 
             m_PlayerManager.Setup();
 
-            // Подписываемся на смерть игрока
+            // Подписываемся на смерть игрока через DamageSystem (T022)
             m_PlayerHealth = m_PlayerManager.m_Instance.GetComponent<TankHealth>();
             if (m_PlayerHealth != null)
             {
-                m_PlayerHealth.OnDeathEvent += OnPlayerDied;
+                DamageSystem.RegisterPlayer(m_PlayerHealth);
             }
 
             // Устанавливаем камеру на танк
@@ -211,15 +211,15 @@ namespace TankSurvival
             DifficultyData difficulty = DataCatalog.GetAllDifficulties()[m_CurrentDifficultyIndex];
             m_WaveManager.StartWave(difficulty, m_CurrentWaveNumber, TOTAL_WAVES);
 
-            // Подписываемся на события волны
-            m_WaveManager.OnEnemyDied.AddListener(OnEnemyDied);
-            m_WaveManager.OnWaveCompleted.AddListener(OnWaveCompleted);
+            // T022: подписка на события через DamageSystem вместо UnityEvent
+            DamageSystem.OnEnemyKilled += OnEnemyKilled;
+            DamageSystem.OnPlayerKilled += OnPlayerKilled;
         }
 
         /// <summary>
-        /// Обработка смерти врага
+        /// Обработка убийства врага (T022: через DamageSystem)
         /// </summary>
-        private void OnEnemyDied(int remaining)
+        private void OnEnemyKilled(EnemyHealth enemyHealth)
         {
             // Увеличиваем счётчики
             m_PlayerProgress.totalKills++;
@@ -238,6 +238,15 @@ namespace TankSurvival
                 int xpAmount = 10; // Базовый XP за убийство
                 m_LevelManager.AddXp(xpAmount);
             }
+        }
+
+        /// <summary>
+        /// Обработка смерти игрока (T022: через DamageSystem)
+        /// </summary>
+        private void OnPlayerKilled()
+        {
+            m_IsVictory = false;
+            EndRound();
         }
 
         /// <summary>
@@ -261,30 +270,21 @@ namespace TankSurvival
         }
 
         /// <summary>
-        /// Обработка смерти игрока — немедленное поражение
-        /// </summary>
-        private void OnPlayerDied()
-        {
-            m_IsVictory = false;
-            EndRound();
-        }
-
-        /// <summary>
         /// Начать следующую волну
         /// </summary>
         private void StartNextWave()
         {
             if (m_WaveManager != null)
             {
-                // Отписываемся от старой волны
-                m_WaveManager.OnEnemyDied.RemoveListener(OnEnemyDied);
-                m_WaveManager.OnWaveCompleted.RemoveListener(OnWaveCompleted);
-
-                // Переподписываемся
-                m_WaveManager.OnEnemyDied.AddListener(OnEnemyDied);
-                m_WaveManager.OnWaveCompleted.AddListener(OnWaveCompleted);
+                // T022: отписка/переподписка на DamageSystem
+                DamageSystem.OnEnemyKilled -= OnEnemyKilled;
+                DamageSystem.OnPlayerKilled -= OnPlayerKilled;
 
                 StartWave();
+
+                // Переподписываемся
+                DamageSystem.OnEnemyKilled += OnEnemyKilled;
+                DamageSystem.OnPlayerKilled += OnPlayerKilled;
             }
         }
 
@@ -336,9 +336,9 @@ namespace TankSurvival
             {
                 m_WaveManager.ForceEndWave();
                 m_WaveManager.ClearWaveEnemies();
-                // Отписываемся от всех слушателей
-                m_WaveManager.OnEnemyDied.RemoveAllListeners();
-                m_WaveManager.OnWaveCompleted.RemoveAllListeners();
+                // T022: отписка от DamageSystem
+                DamageSystem.OnEnemyKilled -= OnEnemyKilled;
+                DamageSystem.OnPlayerKilled -= OnPlayerKilled;
             }
 
             // 2. Деспавн танка игрока
@@ -346,10 +346,10 @@ namespace TankSurvival
             {
                 m_PlayerManager.DisableControl();
                 
-                // Отписываемся от события смерти
+                // T022: отписка от DamageSystem
                 if (m_PlayerHealth != null)
                 {
-                    m_PlayerHealth.OnDeathEvent -= OnPlayerDied;
+                    DamageSystem.UnregisterPlayer(m_PlayerHealth);
                     m_PlayerHealth = null;
                 }
                 

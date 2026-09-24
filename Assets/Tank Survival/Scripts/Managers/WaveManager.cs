@@ -76,6 +76,9 @@ namespace TankSurvival
             spawnTimer = spawnInterval; // Первый спавн сразу
 
             OnWaveStarted?.Invoke(currentWave);
+
+            // T022: подписка на смерть врагов через DamageSystem
+            DamageSystem.OnEnemyKilled += HandleEnemyDeath;
         }
 
         private void Update()
@@ -146,12 +149,13 @@ namespace TankSurvival
                 move.m_Speed *= currentEnemySpeedMultiplier;
             }
 
-            // Применяем множитель сложности к здоровью и подписываемся на смерть (T020: враги перешли на EnemyHealth)
+            // Применяем множитель сложности к здоровью и подписываемся на смерть через DamageSystem (T022)
             EnemyHealth health = enemy.GetComponent<EnemyHealth>();
             if (health != null)
             {
                 health.ApplyHealthMultiplier(currentEnemyHealthMultiplier);
-                health.DeathEvent += () => HandleEnemyDeath(health);
+                // T022: регистрируем в DamageSystem вместо прямой подписки на DeathEvent
+                DamageSystem.RegisterEnemy(health);
                 // T021: регистрируем в реестре
                 EnemyRegistry.Register(health);
             }
@@ -165,7 +169,7 @@ namespace TankSurvival
         }
 
         /// <summary>
-        /// Обработка смерти врага
+        /// Обработка смерти врага (T022: вызывается через DamageSystem.OnEnemyKilled)
         /// </summary>
         private void HandleEnemyDeath(EnemyHealth health)
         {
@@ -174,7 +178,6 @@ namespace TankSurvival
                 EnemyRegistry.Unregister(health);
 
             enemiesRemaining--;
-            OnEnemyDied?.Invoke(enemiesRemaining);
 
             if (enemiesRemaining <= 0 && enemiesToSpawn <= 0)
                 EndWave();
@@ -234,6 +237,8 @@ namespace TankSurvival
             m_WaveEnemies.Clear();
             // T021: очистить реестр при чистке мира
             EnemyRegistry.Clear();
+            // T022: отписка от DamageSystem
+            DamageSystem.OnEnemyKilled -= HandleEnemyDeath;
             
             enemiesRemaining = 0;
             enemiesToSpawn = 0;
