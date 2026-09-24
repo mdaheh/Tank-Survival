@@ -366,6 +366,11 @@ namespace TankSurvival
             // 5. Сбрасываем HUD
             UpdateUI();
 
+            // T067: показываем превью и dropdown'ы при возврате в меню
+            var gameUI = FindAnyObjectByType<GameUIHandler>();
+            if (gameUI != null)
+                gameUI.ShowPreviewAndDropdowns();
+
             Debug.Log("[GameManager] Полный сброс выполнен");
         }
 

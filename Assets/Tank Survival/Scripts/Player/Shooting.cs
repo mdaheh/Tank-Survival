@@ -1,5 +1,4 @@
 using UnityEngine;
-using System.Linq;
 
 namespace TankSurvival
 {
@@ -20,6 +19,14 @@ namespace TankSurvival
         public float m_ShotCooldown = 0.3f;
         public float fireRange = 10f;
 
+        // T066: урон берётся из TurretData
+        [Tooltip("Урон снаряда — передаётся из TurretData при спавне")]
+        public float m_Damage = 5f;
+
+        // T064: скорость поворота турели
+        [Tooltip("Скорость поворота турели в градусах в секунду")]
+        public float m_TurretTurnSpeed = 180f;
+
         private float m_ShotCooldownTimer = 0.0f;
         private bool m_Fired;
         private float closestDist = float.MaxValue;
@@ -31,9 +38,18 @@ namespace TankSurvival
         private float m_LastTargetSearch = 0f;
         private const float TARGET_SEARCH_INTERVAL = 0.5f;
 
+        // T064: кэш Transform цели (избегаем GetComponent в Update)
+        private Transform m_TargetTransform;
+
         void Awake()
         {
             m_ShootingData = GetComponent<ShootingData>();
+
+            // T064: назначить currentGun если не назначен
+            if (currentGun == null)
+            {
+                currentGun = transform.gameObject;
+            }
         }
 
         // Update is called once per frame
@@ -57,6 +73,28 @@ namespace TankSurvival
                 m_LastTargetSearch = TARGET_SEARCH_INTERVAL;
             }
 
+            // T064: поворот турели к цели
+            if (currentTarget && m_TargetTransform != null)
+            {
+                Vector3 dir = m_TargetTransform.position - currentGun.transform.position;
+                dir.y = 0; // только вокруг Y
+
+                if (dir.sqrMagnitude > 0.0001f)
+                {
+                    Quaternion targetRotation = Quaternion.LookRotation(dir);
+                    currentGun.transform.rotation = Quaternion.RotateTowards(
+                        currentGun.transform.rotation,
+                        targetRotation,
+                        m_TurretTurnSpeed * Time.deltaTime
+                    );
+
+                    // T064: стреляем только если угол до цели < 10°
+                    float angle = Quaternion.Angle(currentGun.transform.rotation, targetRotation);
+                    if (angle > 10f)
+                        return;
+                }
+            }
+
             // Стреляем, если есть цель и кулдаун прошёл
             if (!m_Fired && currentTarget)
             {
@@ -72,6 +110,7 @@ namespace TankSurvival
             Collider[] colliders = Physics.OverlapSphere(transform.position, fireRange, enemyMask);
             closestDist = float.MaxValue;
             currentTarget = null;
+            m_TargetTransform = null;
 
             for (int i = 0; i < colliders.Length; i++)
             {
@@ -85,6 +124,7 @@ namespace TankSurvival
                 if (dist <= closestDist)
                 {
                     currentTarget = targetRigidbody;
+                    m_TargetTransform = targetTransform; // T064: кэшируем Transform
                     closestDist = dist;
                     aimPosition = m_FireTransform;
                 }
@@ -96,6 +136,13 @@ namespace TankSurvival
             m_Fired = true;
             Rigidbody shellInstance = Instantiate(m_Shell, m_FireTransform.position, m_FireTransform.rotation) as Rigidbody;
 
+            // T066: передаём урон из данных на снаряд
+            ShellExplosion shellExp = shellInstance.GetComponent<ShellExplosion>();
+            if (shellExp != null)
+            {
+                shellExp.m_MaxDamage = m_Damage; // TODO T024: переедет в StatBlock/Projectile
+            }
+
             // Применяем бонусы от улучшений к скорости снаряда
             float shellSpeed = 20f;
             if (m_ShootingData != null && m_ShootingData.damageBonus > 0)
@@ -106,14 +153,6 @@ namespace TankSurvival
             shellInstance.linearVelocity = shellSpeed * m_FireTransform.forward;
 
             m_ShotCooldownTimer = m_ShotCooldown;
-        }
-
-        private void AutoAiming()
-        {
-            if (currentGun && currentTarget)
-            {
-                currentGun.transform.LookAt(currentTarget.transform);
-            }
         }
     }
 }

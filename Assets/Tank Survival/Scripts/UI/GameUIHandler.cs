@@ -282,6 +282,9 @@ namespace TankSurvival
             // Отключаем меню
             m_StartMenuRoot.gameObject.SetActive(false);
 
+            // T067: скрываем превью и dropdown'ы
+            HidePreviewAndDropdowns();
+
             // Получаем выбранные данные частей
             ChassisData selectedChassis = GetSelectedChassisData();
             TurretData selectedTurret = GetSelectedTurretData();
@@ -418,6 +421,46 @@ namespace TankSurvival
             GameObject selectedTurret = GetSelectedTurretPrefab();
 
             m_PlayerPreview.SetTankPreview(selectedChassis, selectedTurret);
+        }
+
+        /// <summary>
+        /// T067: скрыть превью и dropdown'ы при старте забега
+        /// </summary>
+        private void HidePreviewAndDropdowns()
+        {
+            // Скрываем превью
+            if (m_PlayerPreview != null)
+            {
+                m_PlayerPreview.HidePreview();
+            }
+
+            // Скрываем dropdown'ы
+            if (m_ChassisDropdown != null)
+                m_ChassisDropdown.gameObject.SetActive(false);
+            if (m_TurretDropdown != null)
+                m_TurretDropdown.gameObject.SetActive(false);
+            if (m_KillsRequiredText != null)
+                m_KillsRequiredText.gameObject.SetActive(false);
+        }
+
+        /// <summary>
+        /// T067: показать превью и dropdown'ы при возврате в меню
+        /// </summary>
+        public void ShowPreviewAndDropdowns()
+        {
+            // Показываем превью
+            if (m_PlayerPreview != null)
+            {
+                m_PlayerPreview.ShowPreview();
+            }
+
+            // Показываем dropdown'ы
+            if (m_ChassisDropdown != null)
+                m_ChassisDropdown.gameObject.SetActive(true);
+            if (m_TurretDropdown != null)
+                m_TurretDropdown.gameObject.SetActive(true);
+            if (m_KillsRequiredText != null)
+                m_KillsRequiredText.gameObject.SetActive(true);
         }
     }
 }

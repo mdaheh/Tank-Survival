@@ -10,7 +10,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1275890844549483826}
   - component: {fileID: 2585823277053199323}
-  m_Layer: 0
+  m_Layer: 9
   m_Name: TurretMount
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -95,6 +95,10 @@ PrefabInstance:
     - target: {fileID: 919132149155446097, guid: aba55ef12a973f846a6d92dc861f4808, type: 3}
       propertyPath: m_Name
       value: body_fancy
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: aba55ef12a973f846a6d92dc861f4808, type: 3}
+      propertyPath: m_Layer
+      value: 9
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []

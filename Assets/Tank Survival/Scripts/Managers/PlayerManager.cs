@@ -111,6 +111,8 @@ namespace TankSurvival
             }
             shooting.m_ShotCooldown = turret.fireRate;
             shooting.fireRange = turret.fireRange;
+            // T066: передаём урон из данных
+            shooting.m_Damage = turret.damage;
         }
         public void Setup(int controlIndex = 1)
         {

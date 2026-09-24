@@ -109,5 +109,23 @@ namespace TankSurvival
                 TankPreview = null;
             }
         }
+
+        /// <summary>
+        /// T067: скрыть объект превью (не уничтожая)
+        /// </summary>
+        public void HidePreview()
+        {
+            if (TankPreview != null)
+                TankPreview.SetActive(false);
+        }
+
+        /// <summary>
+        /// T067: показать объект превью
+        /// </summary>
+        public void ShowPreview()
+        {
+            if (TankPreview != null)
+                TankPreview.SetActive(true);
+        }
     }
 }
