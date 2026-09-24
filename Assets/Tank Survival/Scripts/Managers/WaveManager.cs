@@ -151,7 +151,9 @@ namespace TankSurvival
             if (health != null)
             {
                 health.ApplyHealthMultiplier(currentEnemyHealthMultiplier);
-                health.DeathEvent += HandleEnemyDeath;
+                health.DeathEvent += () => HandleEnemyDeath(health);
+                // T021: регистрируем в реестре
+                EnemyRegistry.Register(health);
             }
 
             // Указываем врагу, кто игрок
@@ -165,8 +167,12 @@ namespace TankSurvival
         /// <summary>
         /// Обработка смерти врага
         /// </summary>
-        private void HandleEnemyDeath()
+        private void HandleEnemyDeath(EnemyHealth health)
         {
+            // T021: unregister из реестра
+            if (health != null)
+                EnemyRegistry.Unregister(health);
+
             enemiesRemaining--;
             OnEnemyDied?.Invoke(enemiesRemaining);
 
@@ -226,6 +232,8 @@ namespace TankSurvival
                 }
             }
             m_WaveEnemies.Clear();
+            // T021: очистить реестр при чистке мира
+            EnemyRegistry.Clear();
             
             enemiesRemaining = 0;
             enemiesToSpawn = 0;
