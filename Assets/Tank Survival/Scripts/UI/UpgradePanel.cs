@@ -108,8 +108,6 @@ namespace TankSurvival
 
             // Создать карточки
             CreateCards(options);
-
-            Debug.Log($"[UpgradePanel] Показаны {options.Count} вариантов улучшений");
         }
 
         /// <summary>
@@ -200,8 +198,6 @@ namespace TankSurvival
         /// </summary>
         private void OnUpgradeSelected(UpgradeOptionData upgrade)
         {
-            Debug.Log($"[UpgradePanel] Выбрано: {upgrade.displayName}");
-
             // Применяем улучшение
             if (m_LevelManager != null)
                 m_LevelManager.ApplyUpgrade(upgrade);

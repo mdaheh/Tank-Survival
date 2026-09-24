@@ -105,8 +105,6 @@ namespace TankSurvival
 
             // Показываем панель
             m_Panel.SetActive(true);
-
-            Debug.Log($"[RoundEndUI] Раунд завершён. Победа: {isVictory}. Статистика обновлена.");
         }
 
         /// <summary>
@@ -123,7 +121,6 @@ namespace TankSurvival
         /// </summary>
         private void OnNewGame()
         {
-            Debug.Log("[RoundEndUI] Новая игра");
             HideRoundEnd();
 
             if (m_GameManager != null)
@@ -135,7 +132,6 @@ namespace TankSurvival
         /// </summary>
         private void OnHangar()
         {
-            Debug.Log("[RoundEndUI] Ангар");
             HideRoundEnd();
 
             if (m_GameManager != null)

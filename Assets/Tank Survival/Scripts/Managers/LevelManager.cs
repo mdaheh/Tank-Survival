@@ -82,9 +82,6 @@ namespace TankSurvival
 
             m_CurrentXp += amount;
 
-            if (debugMode)
-                Debug.Log($"[LevelManager] +{amount} XP. Итого: {m_CurrentXp}/{m_XpRequired}");
-
             // Проверка повышения уровня (может быть несколько за раз, если дали много XP)
             while (m_CurrentXp >= m_XpRequired)
             {
@@ -103,16 +100,11 @@ namespace TankSurvival
             m_CurrentLevel++;
             m_XpRequired = DataCatalog.GetLevelCurve().GetXpRequiredForLevel(m_CurrentLevel);
 
-            if (debugMode)
-                Debug.Log($"[LevelManager] Уровень {m_CurrentLevel}! Нужно ещё {m_XpRequired} XP");
-
             OnLevelUp?.Invoke(m_CurrentLevel);
 
             // Если достигнут максимальный уровень — ничего не предлагаем
             if (!DataCatalog.GetLevelCurve().IsValidLevel(m_CurrentLevel))
             {
-                if (debugMode)
-                    Debug.Log($"[LevelManager] Максимальный уровень {DataCatalog.GetLevelCurve().MaxLevel} достигнут!");
                 return;
             }
 
@@ -154,9 +146,6 @@ namespace TankSurvival
             upgrade.ApplyToPlayer();
             m_LevelUpPaused = false;
 
-            if (debugMode)
-                Debug.Log($"[LevelManager] Применено улучшение: {upgrade.displayName}");
-
             // Скрыть панель улучшений (оба варианта)
             if (m_UpgradePanel != null)
                 m_UpgradePanel.HidePanel();
@@ -190,9 +179,6 @@ namespace TankSurvival
             m_CurrentXp = 0;
             m_XpRequired = DataCatalog.GetLevelCurve().GetXpRequiredForLevel(1);
             m_LevelUpPaused = false;
-
-            if (debugMode)
-                Debug.Log("[LevelManager] Прогресс уровня сброшен для нового раунда");
         }
 
         /// <summary>
@@ -210,9 +196,6 @@ namespace TankSurvival
             m_CurrentXp = xp;
             m_XpRequired = DataCatalog.GetLevelCurve().GetXpRequiredForLevel(level);
             UpdateUI();
-
-            if (debugMode)
-                Debug.Log($"[LevelManager] Установлено: Уровень {level}, XP {xp}");
         }
     }
 }

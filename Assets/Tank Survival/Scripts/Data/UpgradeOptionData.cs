@@ -75,8 +75,6 @@ namespace TankSurvival
                     ApplyExplosionForce(shellExplosion);
                     break;
             }
-
-            Debug.Log($"[UpgradeOptionData] Применено улучшение: {displayName}");
         }
 
         private void ApplyDamage(GameObject chassis, GameObject turret, ShellExplosion shellExplosion, Shooting shooting)
