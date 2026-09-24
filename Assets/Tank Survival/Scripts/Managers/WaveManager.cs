@@ -75,8 +75,6 @@ namespace TankSurvival
             if (spawnInterval < 0.3f) spawnInterval = 0.3f; // Минимальный интервал
             spawnTimer = spawnInterval; // Первый спавн сразу
 
-            Debug.Log($"[WaveManager] Волна {waveNumber}: {enemiesToSpawn} врагов, HP x{currentEnemyHealthMultiplier:F1}, Speed x{currentEnemySpeedMultiplier:F1}");
-
             OnWaveStarted?.Invoke(currentWave);
         }
 
@@ -183,7 +181,6 @@ namespace TankSurvival
         private void EndWave()
         {
             m_WaveActive = false;
-            Debug.Log($"[WaveManager] Волна {currentWave} завершена!");
 
             OnWaveCompleted?.Invoke(currentWave);
 
