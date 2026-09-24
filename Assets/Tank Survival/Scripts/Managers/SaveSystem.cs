@@ -22,7 +22,6 @@ namespace TankSurvival
             {
                 string json = JsonUtility.ToJson(progress, true); // true = pretty print
                 File.WriteAllText(SavePath, json);
-                Debug.Log($"[SaveSystem] Прогресс сохранён: {progress.totalKills} убийств, {progress.totalGamesPlayed} игр");
             }
             catch (System.Exception e)
             {
@@ -42,12 +41,10 @@ namespace TankSurvival
                 {
                     string json = File.ReadAllText(SavePath);
                     PlayerProgress progress = JsonUtility.FromJson<PlayerProgress>(json);
-                    Debug.Log($"[SaveSystem] Прогресс загружен: {progress.totalKills} убийств, {progress.totalGamesPlayed} игр");
                     return progress;
                 }
                 else
                 {
-                    Debug.Log("[SaveSystem] Файл сохранения не найден — создан новый прогресс");
                     return CreateNewProgress();
                 }
             }
@@ -66,7 +63,6 @@ namespace TankSurvival
             if (File.Exists(SavePath))
             {
                 File.Delete(SavePath);
-                Debug.Log("[SaveSystem] Прогресс удалён");
             }
         }
 

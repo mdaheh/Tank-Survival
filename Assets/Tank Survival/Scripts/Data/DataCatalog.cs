@@ -27,7 +27,6 @@ namespace TankSurvival
             // Если уже инициализирован — не повторяем (защита от двойной инициализации)
             if (s_Initialized)
             {
-                Debug.LogWarning("[DataCatalog] Уже инициализирован. Пропускаю повторную инициализацию.");
                 return;
             }
 
@@ -56,9 +55,6 @@ namespace TankSurvival
 
             // Ставим флаг — инициализирован
             s_Initialized = true;
-
-            // Логируем результат
-            Debug.Log($"[DataCatalog] Инициализировано: {s_ChassisCache.Count} шасси, {s_TurretCache.Count} башен, {s_DifficultyCache.Count} сложностей, {s_UpgradePool.Count} улучшений");
         }
 
         // === МЕТОД ПРОВЕРКИ ===
