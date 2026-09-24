@@ -17,6 +17,9 @@ namespace TankSurvival
         public Transform spawnPoint;            // Точка спавна врагов (по краям карты)
         public Transform playerTransform;       // Ссылка на игрока (для AI)
         public GameObject[] enemyPrefabs;       // Доступные типы врагов для спавна
+        [Header("Enemy Pool")]
+        [SerializeField, Min(0)] private int m_EnemyPoolPrewarmCount = 32;
+        [SerializeField, Min(1)] private int m_EnemyPoolMaxSize = 300;
 
         [Header("Current Wave Info")]
         public int currentWave;                   // Текущая волна (начинается с 1)
@@ -31,9 +34,10 @@ namespace TankSurvival
 
         private bool m_WaveActive;
         private DifficultyData m_CurrentDifficulty;
+        private PoolManager m_EnemyPool;
         
-        // Список инстансов врагов текущей волны — для чистки и пула в Ф1/T023
-        private readonly List<GameObject> m_WaveEnemies = new List<GameObject>();
+        // Список активных инстансов врагов текущей волны — для очистки и пула в Ф1/T023
+        private readonly List<EnemyHealth> m_WaveEnemies = new List<EnemyHealth>();
 
         // События
         public UnityEvent<int> OnWaveStarted;     // (waveNumber)
@@ -50,6 +54,7 @@ namespace TankSurvival
                 return;
             }
             Instance = this;
+            m_EnemyPool = new PoolManager(enemyPrefabs, m_EnemyPoolPrewarmCount, m_EnemyPoolMaxSize);
         }
 
         /// <summary>
@@ -130,6 +135,12 @@ namespace TankSurvival
                 return;
             }
 
+            if (m_EnemyPool == null)
+            {
+                Debug.LogError("[WaveManager] Пул врагов не инициализирован.");
+                return;
+            }
+
             // Случайная точка спавна (добавляем случайное смещение по кругу)
             float angle = Random.Range(0f, Mathf.PI * 2f);
             float radius = 15f; // Радиус спавна вокруг игрока
@@ -141,33 +152,21 @@ namespace TankSurvival
 
             // Случайный тип врага
             GameObject enemyPrefab = enemyPrefabs[Random.Range(0, enemyPrefabs.Length)];
-            GameObject enemy = Instantiate(enemyPrefab, spawnPosition, Quaternion.identity);
-            
-            // Сохраняем ссылку для чистки
-            m_WaveEnemies.Add(enemy);
-
-            // Применяем множители сложности к движению
-            EnemyMovement move = enemy.GetComponent<EnemyMovement>();
-            if (move)
+            EnemyHealth health = m_EnemyPool.GetEnemy(
+                enemyPrefab,
+                spawnPosition,
+                currentEnemyHealthMultiplier,
+                currentEnemySpeedMultiplier,
+                playerTransform);
+            if (health == null)
             {
-                move.m_Speed *= currentEnemySpeedMultiplier;
+                Debug.LogError("[WaveManager] Не удалось получить врага из пула.");
+                return;
             }
 
-            // Применяем множитель сложности к здоровью и подписываемся на смерть через DamageSystem (T022)
-            EnemyHealth health = enemy.GetComponent<EnemyHealth>();
-            if (health != null)
-            {
-                health.ApplyHealthMultiplier(currentEnemyHealthMultiplier);
-                // T022: регистрируем в DamageSystem вместо прямой подписки на DeathEvent
-                DamageSystem.RegisterEnemy(health);
-                // T021: регистрируем в реестре
-                EnemyRegistry.Register(health);
-            }
-
-            // Указываем врагу, кто игрок
-            EnemyAI ai = enemy.GetComponent<EnemyAI>();
-            if (ai != null)
-                ai.SetPlayer(playerTransform);
+            m_WaveEnemies.Add(health);
+            DamageSystem.RegisterEnemy(health);
+            EnemyRegistry.Register(health);
 
             OnEnemySpawned?.Invoke(enemiesRemaining, enemiesToSpawn);
         }
@@ -177,14 +176,28 @@ namespace TankSurvival
         /// </summary>
         private void HandleEnemyDeath(EnemyHealth health)
         {
-            // T021: unregister из реестра
-            if (health != null)
-                EnemyRegistry.Unregister(health);
+            if (health == null)
+            {
+                return;
+            }
+
+            int index = m_WaveEnemies.IndexOf(health);
+            if (index >= 0)
+            {
+                int lastIndex = m_WaveEnemies.Count - 1;
+                m_WaveEnemies[index] = m_WaveEnemies[lastIndex];
+                m_WaveEnemies.RemoveAt(lastIndex);
+            }
+
+            // PoolManager снимает регистрацию перед деактивацией объекта.
+            m_EnemyPool?.Release(health);
 
             enemiesRemaining--;
 
             if (enemiesRemaining <= 0 && enemiesToSpawn <= 0)
+            {
                 EndWave();
+            }
         }
 
         /// <summary>
@@ -231,20 +244,19 @@ namespace TankSurvival
         /// </summary>
         public void ClearWaveEnemies()
         {
-            for (int i = 0; i < m_WaveEnemies.Count; i++)
+            for (int i = m_WaveEnemies.Count - 1; i >= 0; i--)
             {
                 if (m_WaveEnemies[i] != null)
                 {
-                    UnityEngine.Object.Destroy(m_WaveEnemies[i]);
+                    m_EnemyPool?.Release(m_WaveEnemies[i]);
                 }
             }
             m_WaveEnemies.Clear();
-            // T021: очистить реестр при чистке мира
+
             EnemyRegistry.Clear();
-            // T022: отписка от DamageSystem
             DamageSystem.OnEnemyKilled -= HandleEnemyDeath;
             DamageSystem.Clear();
-            
+
             enemiesRemaining = 0;
             enemiesToSpawn = 0;
             m_WaveActive = false;

@@ -13,6 +13,8 @@ namespace TankSurvival
         [SerializeField] private float m_StartingHealth = 30f;
 
         private float m_CurrentHealth;
+        private float m_HealthMultiplier = 1f;
+
         private bool m_Dead;
 
         /// <summary>
@@ -22,7 +24,7 @@ namespace TankSurvival
 
         // Реализация IDamageable
         public float CurrentHealth => m_CurrentHealth;
-        public float MaxHealth => m_StartingHealth;
+        public float MaxHealth => m_StartingHealth * m_HealthMultiplier;
         public bool IsAlive => !m_Dead;
 
         private void OnEnable()
@@ -35,19 +37,24 @@ namespace TankSurvival
         /// </summary>
         public void ResetHealth()
         {
-            m_CurrentHealth = m_StartingHealth;
+            m_CurrentHealth = m_StartingHealth * m_HealthMultiplier;
             m_Dead = false;
         }
 
         /// <summary>
-        /// Применить множитель HP (сложность/волна) и пересчитать текущее здоровье.
-        /// T020: сюда перенесена логика, раньше бывшая в WaveManager:
-        /// health.m_StartingHealth *= multiplier; health.ResetHealth();
+        /// Задать множитель HP для текущего спавна. Предыдущий множитель не сохраняется.
         /// </summary>
+        public void SetHealthMultiplier(float multiplier)
+        {
+            m_HealthMultiplier = multiplier;
+            ResetHealth();
+        }
+
+        // Сохранено для совместимости с T020. Множитель задаётся заново,
+        // а не накапливается умножением на предыдущий.
         public void ApplyHealthMultiplier(float multiplier)
         {
-            m_StartingHealth *= multiplier;
-            m_CurrentHealth = m_StartingHealth;
+            SetHealthMultiplier(multiplier);
         }
 
         public void TakeDamage(float amount)
@@ -67,7 +74,7 @@ namespace TankSurvival
             m_Dead = true;
             DeathEvent?.Invoke(this);
 
-            // T020: прячем тело — как это делал TankHealth.OnDeath; объект остаётся в m_WaveEnemies до чистки волны
+            // T023: возврат в пул выполняется обработчиком WaveManager после события смерти.
             gameObject.SetActive(false);
         }
     }
