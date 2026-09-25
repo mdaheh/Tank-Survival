@@ -112,3 +112,6 @@ InitTestScene*.unity*
 
 # Auto-generated cache in Assets folder
 /[Aa]ssets/[Ss]ceneDependencyCache*
+
+# GigaCode выведен из стека (2026-09-25): папка агента в проект не попадает
+/.gigacode_vsc/
