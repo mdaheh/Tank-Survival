@@ -42,9 +42,7 @@ namespace TankSurvival
         /// <summary>
         /// Ссылка на пул снарядов (T024)
         /// </summary>
-        public PoolManager Pool => m_PoolManager;
-
-        [SerializeField] private PoolManager m_PoolManager;
+        public PoolManager Pool => PoolManager.Instance;
 
         private void Awake()
         {

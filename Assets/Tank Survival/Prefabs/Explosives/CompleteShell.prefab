@@ -14,8 +14,8 @@ GameObject:
   - component: {fileID: 13693818}
   - component: {fileID: 5409530}
   - component: {fileID: 10833074}
-  - component: {fileID: 11426614}
   - component: {fileID: -927890215427519120}
+  - component: {fileID: 7026209202416979157}
   m_Layer: 0
   m_Name: CompleteShell
   m_TagString: Untagged
@@ -106,7 +106,7 @@ CapsuleCollider:
   m_Material: {fileID: 0}
   m_IncludeLayers:
     serializedVersion: 2
-    m_Bits: 0
+    m_Bits: 4294967295
   m_ExcludeLayers:
     serializedVersion: 2
     m_Bits: 8704
@@ -135,7 +135,7 @@ Rigidbody:
   m_InertiaRotation: {x: 0, y: 0, z: 0, w: 1}
   m_IncludeLayers:
     serializedVersion: 2
-    m_Bits: 0
+    m_Bits: 4294967295
   m_ExcludeLayers:
     serializedVersion: 2
     m_Bits: 0
@@ -211,27 +211,6 @@ Light:
   m_LightUnit: 1
   m_LuxAtDistance: 1
   m_EnableSpotReflector: 1
---- !u!114 &11426614
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 192454}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: af9894b7bced3a04c870ade3c621f94e, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  m_TankMask:
-    serializedVersion: 2
-    m_Bits: 2560
-  m_ExplosionParticles: {fileID: 6950372259472959370}
-  m_ExplosionAudio: {fileID: 9184786572633591583}
-  m_MaxLifeTime: 2
-  m_MaxDamage: 1
-  m_ExplosionForce: 1
-  m_ExplosionRadius: 2
 --- !u!114 &-927890215427519120
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -261,6 +240,24 @@ MonoBehaviour:
   m_ShadowLayerMask: 1
   m_RenderingLayers: 1
   m_ShadowRenderingLayers: 1
+--- !u!114 &7026209202416979157
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 192454}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 40b9caf67d7bcfa4b85a9989fbdff10c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TankSurvival.Projectile
+  m_LifeTime: 2
+  m_MaxDamage: 5
+  m_ExplosionForce: 1
+  m_ExplosionRadius: 1
+  m_ExplosionAudio: {fileID: 8300000, guid: 3a77defcde1caaa40b6f7502547e0c4e, type: 3}
+  m_BurstEffect: {fileID: 6950372259490975824}
 --- !u!1001 &6950372259491175068
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -338,18 +335,13 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 537afde59eeba4c82897def1dccfba0a, type: 3}
---- !u!198 &6950372259472959370 stripped
-ParticleSystem:
-  m_CorrespondingSourceObject: {fileID: 19807510, guid: 537afde59eeba4c82897def1dccfba0a, type: 3}
+--- !u!1 &6950372259490975824 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 199372, guid: 537afde59eeba4c82897def1dccfba0a, type: 3}
   m_PrefabInstance: {fileID: 6950372259491175068}
   m_PrefabAsset: {fileID: 0}
 --- !u!4 &6950372259491231702 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 486730, guid: 537afde59eeba4c82897def1dccfba0a, type: 3}
-  m_PrefabInstance: {fileID: 6950372259491175068}
-  m_PrefabAsset: {fileID: 0}
---- !u!82 &9184786572633591583 stripped
-AudioSource:
-  m_CorrespondingSourceObject: {fileID: -6988948873659476605, guid: 537afde59eeba4c82897def1dccfba0a, type: 3}
   m_PrefabInstance: {fileID: 6950372259491175068}
   m_PrefabAsset: {fileID: 0}

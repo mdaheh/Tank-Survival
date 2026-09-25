@@ -4993,6 +4993,11 @@ MonoBehaviour:
   playerTransform: {fileID: 0}
   enemyPrefabs:
   - {fileID: 6286968234082687938, guid: bb1da095ba36c3a49b06e5726038df55, type: 3}
+  m_EnemyPoolPrewarmCount: 32
+  m_EnemyPoolMaxSize: 300
+  m_ShellPrefab: {fileID: 7026209202416979157, guid: 008ecb1b70bec724fa2cd34255b0d8f8, type: 3}
+  m_ShellPoolPrewarmCount: 16
+  m_ShellPoolMaxSize: 100
   currentWave: 0
   enemiesRemaining: 0
   enemiesToSpawn: 0

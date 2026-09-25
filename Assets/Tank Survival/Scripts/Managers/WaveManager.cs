@@ -20,6 +20,10 @@ namespace TankSurvival
         [Header("Enemy Pool")]
         [SerializeField, Min(0)] private int m_EnemyPoolPrewarmCount = 32;
         [SerializeField, Min(1)] private int m_EnemyPoolMaxSize = 300;
+        [Header("Shell Pool (T024)")]
+        [SerializeField] private Projectile m_ShellPrefab;
+        [SerializeField, Min(0)] private int m_ShellPoolPrewarmCount = 16;
+        [SerializeField, Min(1)] private int m_ShellPoolMaxSize = 100;
 
         [Header("Current Wave Info")]
         public int currentWave;                   // Текущая волна (начинается с 1)
@@ -55,6 +59,10 @@ namespace TankSurvival
             }
             Instance = this;
             m_EnemyPool = new PoolManager(enemyPrefabs, m_EnemyPoolPrewarmCount, m_EnemyPoolMaxSize);
+            if (m_ShellPrefab != null)
+            {
+                m_EnemyPool.InitShellPool(m_ShellPrefab, m_ShellPoolPrewarmCount, m_ShellPoolMaxSize);
+            }
         }
 
         /// <summary>
