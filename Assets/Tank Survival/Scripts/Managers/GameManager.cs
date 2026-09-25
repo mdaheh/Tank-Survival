@@ -228,7 +228,7 @@ namespace TankSurvival
         /// <summary>
         /// Обработка убийства врага (T022: через DamageSystem)
         /// </summary>
-        private void OnEnemyKilled(EnemyHealth enemyHealth)
+        private void OnEnemyKilled(IDamageable damageable)
         {
             // Увеличиваем счётчики
             m_PlayerProgress.totalKills++;

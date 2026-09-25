@@ -152,17 +152,26 @@ namespace TankSurvival
         private void Fire()
         {
             m_Fired = true;
-            Rigidbody shellInstance = Instantiate(m_Shell, m_FireTransform.position, m_FireTransform.rotation) as Rigidbody;
-
-            // T066: передаём урон из данных на снаряд
-            ShellExplosion shellExp = shellInstance.GetComponent<ShellExplosion>();
-            if (shellExp != null)
+            
+            // Получаем снаряд из пула PoolManager
+            Projectile shell = LevelManager.Instance.Pool.GetShell(
+                m_FireTransform.position, 
+                m_FireTransform.rotation);
+                
+            if (shell == null)
             {
-                shellExp.m_MaxDamage = m_Damage; // TODO T024: переедет в StatBlock/Projectile
+                return; // пул не настроен или исчерпан
             }
 
+            // Передаём урон из StatBlock на снаряд
+            shell.m_MaxDamage = m_Damage;
+
             float shellSpeed = 20f;
-            shellInstance.linearVelocity = shellSpeed * m_FireTransform.forward;
+            Rigidbody rb = shell.GetComponent<Rigidbody>();
+            if (rb != null)
+            {
+                rb.linearVelocity = shellSpeed * m_FireTransform.forward;
+            }
 
             m_ShotCooldownTimer = m_ShotCooldown;
         }

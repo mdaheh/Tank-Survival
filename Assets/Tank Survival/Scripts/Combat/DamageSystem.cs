@@ -8,7 +8,7 @@ namespace TankSurvival
     /// </summary>
     public static class DamageSystem
     {
-        public static event System.Action<EnemyHealth> OnEnemyKilled;
+        public static event System.Action<IDamageable> OnEnemyKilled;
         public static event System.Action OnPlayerKilled;
 
         private static readonly List<EnemyHealth> s_EnemyList = new();
@@ -34,6 +34,13 @@ namespace TankSurvival
             s_EnemyList.Add(health);
         }
 
+        public static void RegisterEnemy(IDamageable damageable)
+        {
+            EnemyHealth health = damageable as EnemyHealth;
+            if (health == null) return;
+            RegisterEnemy(health);
+        }
+
         /// <summary>
         /// Отменить регистрацию врага
         /// </summary>
@@ -42,6 +49,13 @@ namespace TankSurvival
             if (health == null) return;
             health.DeathEvent -= HandleEnemyDeath;
             s_EnemyList.Remove(health);
+        }
+
+        public static void UnregisterEnemy(IDamageable damageable)
+        {
+            EnemyHealth health = damageable as EnemyHealth;
+            if (health == null) return;
+            UnregisterEnemy(health);
         }
 
         /// <summary>
@@ -71,7 +85,11 @@ namespace TankSurvival
         public static void Clear()
         {
             foreach (var health in s_EnemyList)
-                health.DeathEvent -= HandleEnemyDeath;
+            {
+                var dmg = health as IDamageable;
+                if (dmg != null)
+                    dmg.DeathEvent -= HandleEnemyDeath;
+            }
             s_EnemyList.Clear();
 
             foreach (var health in s_PlayerList)
@@ -79,12 +97,14 @@ namespace TankSurvival
             s_PlayerList.Clear();
         }
 
-        private static void HandleEnemyDeath(EnemyHealth health)
+        private static void HandleEnemyDeath(IDamageable damageable)
         {
+            EnemyHealth health = damageable as EnemyHealth;
             // Снимаем подписку и убираем из списка сразу: иначе список живых растёт
             // всю сессию, а при пуле (T023) повторная регистрация была бы пропущена.
-            UnregisterEnemy(health);
-            OnEnemyKilled?.Invoke(health);
+            if (health != null)
+                UnregisterEnemy(health);
+            OnEnemyKilled?.Invoke(damageable);
         }
 
         private static void HandlePlayerDeath()

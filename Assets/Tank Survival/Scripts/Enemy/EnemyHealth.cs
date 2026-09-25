@@ -20,9 +20,10 @@ namespace TankSurvival
         /// <summary>
         /// Событие смерти — вызывается один раз при достижении HP = 0
         /// </summary>
-        public event System.Action<EnemyHealth> DeathEvent;
+        public event System.Action<IDamageable> DeathEvent;
 
         // Реализация IDamageable
+        public Transform Transform => transform;
         public float CurrentHealth => m_CurrentHealth;
         public float MaxHealth => m_StartingHealth * m_HealthMultiplier;
         public bool IsAlive => !m_Dead;
@@ -72,7 +73,7 @@ namespace TankSurvival
         private void OnDeath()
         {
             m_Dead = true;
-            DeathEvent?.Invoke(this);
+            DeathEvent?.Invoke(this as IDamageable);
 
             // T023: возврат в пул выполняется обработчиком WaveManager после события смерти.
             gameObject.SetActive(false);

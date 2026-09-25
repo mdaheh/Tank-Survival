@@ -5,12 +5,15 @@ using UnityEngine.Pool;
 namespace TankSurvival
 {
     /// <summary>
-    /// Пул противников. Экземпляры создаются только при инициализации и росте
-    /// максимального размера, а между волнами переиспользуются.
+    /// Пул врагов на UnityEngine.Pool.ObjectPool.
+    /// Создаётся при инициализации, враги возвращаются в пул вместо Destroy.
+    /// Множители статов применяются при Get (не *= на инстансе).
     /// </summary>
     public sealed class PoolManager
     {
-        private readonly Dictionary<GameObject, ObjectPool<EnemyHealth>> m_Pools =
+        public static PoolManager Instance { get; private set; }
+
+        private readonly Dictionary<GameObject, ObjectPool<EnemyHealth>> m_EnemyPools =
             new Dictionary<GameObject, ObjectPool<EnemyHealth>>();
 
         private readonly Dictionary<EnemyHealth, ObjectPool<EnemyHealth>> m_OwnerPools =
@@ -28,12 +31,18 @@ namespace TankSurvival
         private readonly Dictionary<EnemyHealth, int> m_Layers =
             new Dictionary<EnemyHealth, int>();
 
+        private ObjectPool<Projectile> m_ShellPool;
+        private Projectile m_ShellPrefab;
+
+        /// <summary>
+        /// Инициализация пулов врагов по префабам.
+        /// prewarmCount — сколько объектов создать при старте; maxPoolSize — лимит.
+        /// </summary>
         public PoolManager(GameObject[] enemyPrefabs, int prewarmCount, int maxPoolSize)
         {
-            if (enemyPrefabs == null)
-            {
-                return;
-            }
+            Instance = this;
+
+            if (enemyPrefabs == null || enemyPrefabs.Length == 0) return;
 
             prewarmCount = Mathf.Max(0, prewarmCount);
             maxPoolSize = Mathf.Max(1, maxPoolSize);
@@ -41,43 +50,38 @@ namespace TankSurvival
             for (int i = 0; i < enemyPrefabs.Length; i++)
             {
                 GameObject prefab = enemyPrefabs[i];
-                if (prefab == null || prefab.GetComponent<EnemyHealth>() == null)
-                {
-                    Debug.LogError("[PoolManager] Префаб врага должен содержать EnemyHealth.");
-                    continue;
-                }
-
-                if (m_Pools.ContainsKey(prefab))
-                {
-                    continue;
-                }
-
                 ObjectPool<EnemyHealth> pool = null;
                 pool = new ObjectPool<EnemyHealth>(
-                    () => CreateEnemy(prefab, pool),
-                    OnGetEnemy,
-                    OnReleaseEnemy,
-                    OnDestroyEnemy,
-                    true,
-                    prewarmCount,
-                    maxPoolSize);
+                    createFunc: () => CreateEnemy(prefab, pool),
+                    actionOnGet: OnGetEnemy,
+                    actionOnRelease: OnReleaseEnemy,
+                    actionOnDestroy: OnDestroyEnemy,
+                    collectionCheck: true,
+                    defaultCapacity: prewarmCount > 0 ? prewarmCount : maxPoolSize,
+                    maxSize: maxPoolSize
+                );
 
-                m_Pools.Add(prefab, pool);
+                // Prewarm — создаём начальные объекты
+                if (prewarmCount > 0)
+                {
+                    var list = new List<EnemyHealth>(prewarmCount);
+                    for (int j = 0; j < prewarmCount; j++)
+                    {
+                        list.Add(pool.Get());
+                    }
+                    for (int j = 0; j < list.Count; j++)
+                    {
+                        pool.Release(list[j]);
+                    }
+                }
 
-                // ObjectPool не имеет отдельного prewarm API: сначала удерживаем
-                // все новые объекты, затем возвращаем их одним проходом.
-                EnemyHealth[] prewarmBuffer = new EnemyHealth[prewarmCount];
-                for (int j = 0; j < prewarmBuffer.Length; j++)
-                {
-                    prewarmBuffer[j] = pool.Get();
-                }
-                for (int j = 0; j < prewarmBuffer.Length; j++)
-                {
-                    pool.Release(prewarmBuffer[j]);
-                }
+                m_EnemyPools[prefab] = pool;
             }
         }
 
+        /// <summary>
+        /// Взять врага из пула. Множители применяются при Get.
+        /// </summary>
         public EnemyHealth GetEnemy(
             GameObject prefab,
             Vector3 position,
@@ -85,7 +89,7 @@ namespace TankSurvival
             float speedMultiplier,
             Transform player)
         {
-            if (prefab == null || !m_Pools.TryGetValue(prefab, out ObjectPool<EnemyHealth> pool))
+            if (prefab == null || !m_EnemyPools.TryGetValue(prefab, out ObjectPool<EnemyHealth> pool))
             {
                 return null;
             }
@@ -102,6 +106,7 @@ namespace TankSurvival
                 movement.m_Speed = m_BaseSpeeds[health] * speedMultiplier;
             }
 
+            // T023: множитель задаётся заново, не *= (иначе при пуле накопится)
             health.SetHealthMultiplier(healthMultiplier);
 
             EnemyAI ai = m_AIs[health];
@@ -113,6 +118,9 @@ namespace TankSurvival
             return health;
         }
 
+        /// <summary>
+        /// Вернуть врага в пул (смерть/деспавн).
+        /// </summary>
         public void Release(EnemyHealth health)
         {
             if (health == null || !m_OwnerPools.TryGetValue(health, out ObjectPool<EnemyHealth> pool))
@@ -120,8 +128,6 @@ namespace TankSurvival
                 return;
             }
 
-            // collectionCheck включён в конструкторе ObjectPool: повторный Release
-            // обнаруживается Unity, а не приводит к тихой порче состояния врага.
             pool.Release(health);
         }
 
@@ -142,6 +148,7 @@ namespace TankSurvival
 
         private void OnGetEnemy(EnemyHealth health)
         {
+            // T023: сброс статов к базовым при взятии из пула
             EnemyMovement movement = m_Movements[health];
             if (movement != null)
             {
@@ -155,6 +162,7 @@ namespace TankSurvival
 
         private static void OnReleaseEnemy(EnemyHealth health)
         {
+            // T023: отписка от реестра и DamageSystem при возврате в пул
             EnemyRegistry.Unregister(health);
             DamageSystem.UnregisterEnemy(health);
             health.gameObject.SetActive(false);
@@ -168,6 +176,80 @@ namespace TankSurvival
             m_BaseSpeeds.Remove(health);
             m_Layers.Remove(health);
             Object.Destroy(health.gameObject);
+        }
+
+        /// <summary>
+        /// Инициализация пула снарядов (T024).
+        /// </summary>
+        public void InitShellPool(Projectile shellPrefab, int prewarmCount = 16, int maxPoolSize = 100)
+        {
+            if (shellPrefab == null) return;
+            m_ShellPrefab = shellPrefab;
+
+            m_ShellPool = new ObjectPool<Projectile>(
+                createFunc: () => CreateShell(shellPrefab),
+                actionOnGet: OnGetShell,
+                actionOnRelease: OnReleaseShell,
+                actionOnDestroy: OnDestroyShell,
+                collectionCheck: true,
+                defaultCapacity: prewarmCount,
+                maxSize: maxPoolSize
+            );
+
+            if (prewarmCount > 0)
+            {
+                var list = new List<Projectile>(prewarmCount);
+                for (int i = 0; i < prewarmCount; i++)
+                {
+                    list.Add(m_ShellPool.Get());
+                }
+                for (int i = 0; i < list.Count; i++)
+                {
+                    m_ShellPool.Release(list[i]);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Взять снаряд из пула.
+        /// </summary>
+        public Projectile GetShell(Vector3 position, Quaternion rotation)
+        {
+            if (m_ShellPool == null) return null;
+            Projectile shell = m_ShellPool.Get();
+            shell.gameObject.SetActive(true);
+            shell.transform.SetPositionAndRotation(position, rotation);
+            return shell;
+        }
+
+        /// <summary>
+        /// Вернуть снаряд в пул.
+        /// </summary>
+        public void ReleaseShell(Projectile shell)
+        {
+            if (shell == null || m_ShellPool == null) return;
+            m_ShellPool.Release(shell);
+        }
+
+        private Projectile CreateShell(Projectile prefab)
+        {
+            Projectile shell = Object.Instantiate(prefab, Vector3.zero, Quaternion.identity);
+            return shell;
+        }
+
+        private void OnGetShell(Projectile shell)
+        {
+            shell.gameObject.SetActive(true);
+        }
+
+        private void OnReleaseShell(Projectile shell)
+        {
+            shell.gameObject.SetActive(false);
+        }
+
+        private void OnDestroyShell(Projectile shell)
+        {
+            Object.Destroy(shell.gameObject);
         }
     }
 }

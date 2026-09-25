@@ -27,10 +27,14 @@ namespace TankSurvival
         /// </summary>
         public event System.Action OnDeathEvent;
 
-        // T020: реализация IDamageable — урон по площади (ShellExplosion) идёт через интерфейс.
+        // T020: реализация IDamageable
+        public Transform Transform => transform;
         public float CurrentHealth => m_CurrentHealth;
         public float MaxHealth => m_StartingHealth;
         public bool IsAlive => !m_Dead;
+
+        // T020: DeathEvent для IDamageable — вызывается в OnDeath
+        public event System.Action<IDamageable> DeathEvent;
 
         // T019: статы забега — максимальное здоровье читается отсюда
         private StatBlock m_StatBlock;
@@ -205,6 +209,7 @@ namespace TankSurvival
 
             // Вызываем событие смерти — слушатели узнают, что объект уничтожен
             OnDeathEvent?.Invoke();
+            DeathEvent?.Invoke(this as IDamageable);
 
             if (m_ExplosionParticles != null)
             {

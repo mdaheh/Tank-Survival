@@ -79,16 +79,18 @@ namespace TankSurvival
 
         private void ApplyExplosionRadius()
         {
-            var shellExplosion = FindAnyObjectByType<ShellExplosion>();
-            if (shellExplosion)
-                shellExplosion.m_ExplosionRadius += value;
+            // T024: Projectile вместо ShellExplosion
+            var projectile = FindAnyObjectByType<Projectile>();
+            if (projectile)
+                projectile.m_ExplosionRadius += value;
         }
 
         private void ApplyExplosionForce()
         {
-            var shellExplosion = FindAnyObjectByType<ShellExplosion>();
-            if (shellExplosion)
-                shellExplosion.m_ExplosionForce += value;
+            // T024: Projectile вместо ShellExplosion
+            var projectile = FindAnyObjectByType<Projectile>();
+            if (projectile)
+                projectile.m_ExplosionForce += value;
         }
     }
 

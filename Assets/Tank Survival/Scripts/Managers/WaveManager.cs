@@ -174,8 +174,9 @@ namespace TankSurvival
         /// <summary>
         /// Обработка смерти врага (T022: вызывается через DamageSystem.OnEnemyKilled)
         /// </summary>
-        private void HandleEnemyDeath(EnemyHealth health)
+        private void HandleEnemyDeath(IDamageable damageable)
         {
+            EnemyHealth health = damageable as EnemyHealth;
             if (health == null)
             {
                 return;
@@ -253,9 +254,9 @@ namespace TankSurvival
             }
             m_WaveEnemies.Clear();
 
+            // T021/T023: очистка реестра и отписка от DamageSystem
             EnemyRegistry.Clear();
             DamageSystem.OnEnemyKilled -= HandleEnemyDeath;
-            DamageSystem.Clear();
 
             enemiesRemaining = 0;
             enemiesToSpawn = 0;

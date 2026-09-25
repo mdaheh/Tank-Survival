@@ -9,6 +9,11 @@ namespace TankSurvival
     public interface IDamageable
     {
         /// <summary>
+        /// Получить Transform объекта (для доступа к позиции и gameObject)
+        /// </summary>
+        Transform Transform { get; }
+
+        /// <summary>
         /// Получить текущее здоровье (не меньше 0)
         /// </summary>
         float CurrentHealth { get; }
@@ -24,10 +29,13 @@ namespace TankSurvival
         bool IsAlive { get; }
 
         /// <summary>
-        /// Принять урон. Смерть объекта сигналится его собственным событием
-        /// (EnemyHealth.DeathEvent / TankHealth.OnDeathEvent) — в интерфейс не выносим:
-        /// полезная нагрузка события у разных типов разная.
+        /// Принять урон. Вызывает DeathEvent при достижении HP = 0.
         /// </summary>
         void TakeDamage(float amount);
+
+        /// <summary>
+        /// Событие смерти — вызывается один раз при достижении HP = 0
+        /// </summary>
+        event System.Action<IDamageable> DeathEvent;
     }
 }

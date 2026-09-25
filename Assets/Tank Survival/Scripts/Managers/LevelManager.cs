@@ -39,6 +39,13 @@ namespace TankSurvival
         public int XpRequired => m_XpRequired;
         public float XpProgress => m_XpRequired > 0 ? (float)m_CurrentXp / m_XpRequired : 0f;
 
+        /// <summary>
+        /// Ссылка на пул снарядов (T024)
+        /// </summary>
+        public PoolManager Pool => m_PoolManager;
+
+        [SerializeField] private PoolManager m_PoolManager;
+
         private void Awake()
         {
             if (Instance != null && Instance != this)
