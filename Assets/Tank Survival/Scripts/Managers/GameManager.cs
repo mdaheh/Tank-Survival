@@ -34,7 +34,7 @@ namespace TankSurvival
         [Header("References")]
         public CameraControl m_CameraControl;
         public PlayerManager m_PlayerManager;
-        public WaveManager m_WaveManager;
+        public WaveController m_WaveController;
         public LevelManager m_LevelManager;
 
         [Header("UI References")]
@@ -48,7 +48,7 @@ namespace TankSurvival
         public RoundEndUI m_RoundEndUI;                // Скрипт экрана окончания раунда
 
         private TankHealth m_PlayerHealth;              // Ссылка на здоровье игрока (для события смерти)
-        private bool m_IsVictory;                       // true = победа (3 волны пройдены), false = поражение (смерть игрока)
+        private bool m_IsVictory;                       // true = победа (все волны раунда пройдены, T031), false = поражение (смерть игрока)
         [SerializeField] private RunContext m_RunContext; // Состояние забега (T018)
 
         // --- Состояние ---
@@ -56,8 +56,7 @@ namespace TankSurvival
         private PlayerData m_CurrentPlayerData;
         private PlayerProgress m_PlayerProgress;
         private int m_CurrentDifficultyIndex;
-        private int m_CurrentWaveNumber;
-        private const int TOTAL_WAVES = 3; // Количество волн в раунде
+        // T031: счётчик волн и их число в раунде — у WaveController (WaveData.waveCount)
 
         private void Awake()
         {
@@ -84,8 +83,9 @@ namespace TankSurvival
             if (m_TotalKillsText != null)
                 m_TotalKillsText.text = $"Убийств: {m_PlayerProgress.totalKills}";
 
-            if (m_WaveText != null && m_CurrentState == GameState.Playing)
-                m_WaveText.text = $"Волна {m_CurrentWaveNumber}/{TOTAL_WAVES}";
+            // T031: номер волны и их число — из WaveController (число волн — данные сложности)
+            if (m_WaveText != null && m_CurrentState == GameState.Playing && m_WaveController != null)
+                m_WaveText.text = $"Волна {m_WaveController.currentWave}/{m_WaveController.TotalWaveCount}";
         }
 
         /// <summary>
@@ -117,7 +117,6 @@ namespace TankSurvival
         private void StartRound()
         {
             m_CurrentState = GameState.Playing;
-            m_CurrentWaveNumber = 1;
 
             // Создаём RunContext (T018)
             m_RunContext = new RunContext
@@ -136,8 +135,8 @@ namespace TankSurvival
             // Спавн танка
             SpawnTank();
 
-            // Запуск первой волны
-            StartWave();
+            // Запуск волнового раунда (переходы между волнами — внутри WaveController)
+            StartWaveRound();
         }
 
         /// <summary>
@@ -170,13 +169,12 @@ namespace TankSurvival
                 DamageSystem.RegisterPlayer(m_PlayerHealth);
             }
 
-            // T022 (регрессия): волновые UnityEvent не трогаем — задача меняла только цепочку смертей.
-            // Без этой подписки OnWaveCompleted никто не слушает: волна не переходит дальше,
-            // счётчик волн не растёт и раунд не завершается победой.
-            if (m_WaveManager != null)
+            // T031: прогрессом волн владеет WaveController, поэтому GameManager слушает только
+            // сигнал «все волны раунда пройдены» — им раунд завершается победой.
+            if (m_WaveController != null)
             {
-                m_WaveManager.OnWaveCompleted.RemoveListener(OnWaveCompleted);
-                m_WaveManager.OnWaveCompleted.AddListener(OnWaveCompleted);
+                m_WaveController.OnAllWavesCompleted.RemoveListener(OnAllWavesCompleted);
+                m_WaveController.OnAllWavesCompleted.AddListener(OnAllWavesCompleted);
             }
 
             // Устанавливаем камеру на танк
@@ -203,22 +201,23 @@ namespace TankSurvival
         }
 
         /// <summary>
-        /// Начать волну
+        /// Начать волновой раунд
         /// </summary>
-        private void StartWave()
+        private void StartWaveRound()
         {
-            if (m_WaveManager == null)
+            if (m_WaveController == null)
             {
-                Debug.LogError("[GameManager] WaveManager не назначен!");
+                Debug.LogError("[GameManager] WaveController не назначен!");
                 return;
             }
 
-            // Передаём ссылку на игрока WaveManager
+            // Передаём ссылку на игрока WaveController (для спавна врагов вокруг игрока)
             if (m_PlayerManager.m_Instance != null)
-                m_WaveManager.playerTransform = m_PlayerManager.m_Instance.transform;
+                m_WaveController.playerTransform = m_PlayerManager.m_Instance.transform;
 
+            // T031: числа волн и число волн в раунде — из данных сложности (DifficultyData → WaveData)
             DifficultyData difficulty = DataCatalog.GetAllDifficulties()[m_CurrentDifficultyIndex];
-            m_WaveManager.StartWave(difficulty, m_CurrentWaveNumber, TOTAL_WAVES);
+            m_WaveController.StartRound(difficulty);
 
             // T022: подписка на события через DamageSystem вместо UnityEvent
             DamageSystem.OnEnemyKilled += OnEnemyKilled;
@@ -259,44 +258,13 @@ namespace TankSurvival
         }
 
         /// <summary>
-        /// Обработка завершения волны
+        /// Обработка завершения всех волн раунда (T031: сигнал WaveController).
+        /// Переход между волнами и пауза между ними — внутри WaveController.
         /// </summary>
-        private void OnWaveCompleted(int waveNumber)
+        private void OnAllWavesCompleted()
         {
-            m_CurrentWaveNumber++;
-
-            // Проверяем, все ли волны пройдены
-            if (m_CurrentWaveNumber > TOTAL_WAVES)
-            {
-                m_IsVictory = true;
-                EndRound();
-            }
-            else
-            {
-                // Начинаем следующую волну через паузу
-                Invoke(nameof(StartNextWave), 3f); // 3 секунды паузы
-            }
-        }
-
-        /// <summary>
-        /// Начать следующую волну
-        /// </summary>
-        private void StartNextWave()
-        {
-            if (m_WaveManager != null)
-            {
-                // T022: отписка/переподписка на DamageSystem
-                DamageSystem.OnEnemyKilled -= OnEnemyKilled;
-                DamageSystem.OnPlayerKilled -= OnPlayerKilled;
-                m_WaveManager.OnWaveCompleted.RemoveListener(OnWaveCompleted);
-
-                StartWave();
-
-                // Переподписываемся
-                DamageSystem.OnEnemyKilled += OnEnemyKilled;
-                DamageSystem.OnPlayerKilled += OnPlayerKilled;
-                m_WaveManager.OnWaveCompleted.AddListener(OnWaveCompleted);
-            }
+            m_IsVictory = true;
+            EndRound();
         }
 
         /// <summary>
@@ -343,15 +311,14 @@ namespace TankSurvival
                 m_RoundEndPanel.SetActive(false);
 
             // 1. Останавливаем волны и чистим врагов
-            if (m_WaveManager != null)
+            if (m_WaveController != null)
             {
-                // T022 (регрессия): снимаем слушатель волны ДО ForceEndWave — иначе
-                // принудительное завершение волны вызовет OnWaveCompleted и запланирует
-                // следующую волну уже после сброса (спавн врагов в главном меню).
-                m_WaveManager.OnWaveCompleted.RemoveListener(OnWaveCompleted);
+                // T022/T031 (регрессия): снимаем слушатель ДО ForceEndWave — иначе
+                // принудительное завершение волны завершит раунд уже после сброса.
+                m_WaveController.OnAllWavesCompleted.RemoveListener(OnAllWavesCompleted);
 
-                m_WaveManager.ForceEndWave();
-                m_WaveManager.ClearWaveEnemies();
+                m_WaveController.ForceEndWave();
+                m_WaveController.ClearWaveEnemies();
                 // T022: отписка от DamageSystem
                 DamageSystem.OnEnemyKilled -= OnEnemyKilled;
                 DamageSystem.OnPlayerKilled -= OnPlayerKilled;
@@ -383,7 +350,7 @@ namespace TankSurvival
 
             // 3. Сброс состояния игры
             m_CurrentState = GameState.MainMenu;
-            m_CurrentWaveNumber = 0; // T085: в меню раунд не идёт (было 1 — «раунд активен» после поражения)
+            // T085/T031: счётчик волн раунда сбрасывает WaveController.ClearWaveEnemies() — в меню раунд не идёт
 
             m_PlayerProgress.ResetSession();
 

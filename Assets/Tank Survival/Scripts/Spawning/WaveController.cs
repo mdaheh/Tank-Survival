@@ -1,4 +1,3 @@
-using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Events;
@@ -6,29 +5,33 @@ using UnityEngine.Events;
 namespace TankSurvival
 {
     /// <summary>
-    /// Менеджер волн врагов — ядро геймплея в стиле Vampire Survivors.
-    /// Спавнит врагов волнами, отслеживает оставшихся, сигнализирует об окончании волны.
+    /// Контроллер волн (T031, переименован из WaveManager).
+    /// Числа волн (число волн, количество врагов, интервал спавна, множители HP/скорости,
+    /// пауза между волнами) — из плана волн DifficultyData.waveData (WaveData);
+    /// «магических чисел» в коде не остаётся.
+    /// Состав волны — взвешенный случайный выбор по EnemyData.waveWeight.
+    /// Переход между волнами — поле-таймер (было Invoke(nameof(StartNextWave), 3f) в GameManager).
     /// </summary>
-    public class WaveManager : MonoBehaviour
+    public class WaveController : MonoBehaviour
     {
-        public static WaveManager Instance { get; private set; }
+        public static WaveController Instance { get; private set; }
 
         [Header("Spawn Settings")]
-        public Transform spawnPoint;            // Точка спавна врагов (по краям карты)
-        public Transform playerTransform;       // Ссылка на игрока (для AI)
-        public GameObject[] enemyPrefabs;       // Доступные типы врагов для спавна
+        public Transform spawnPoint;            // Точка спавна врагов (по краям карты; T032 заменит на точки/зоны)
+        public Transform playerTransform;       // Ссылка на игрока (для AI и позиции спавна)
+        public GameObject[] enemyPrefabs;       // Прежний путь: префабы, если состав волны не задан данными
+
         [Header("Enemy Pool")]
         [SerializeField, Min(0)] private int m_EnemyPoolPrewarmCount = 32;
         [SerializeField, Min(1)] private int m_EnemyPoolMaxSize = 300;
+
         [Header("Shell Pool (T024)")]
         [SerializeField] private Projectile m_ShellPrefab;
         [SerializeField, Min(0)] private int m_ShellPoolPrewarmCount = 16;
         [SerializeField, Min(1)] private int m_ShellPoolMaxSize = 100;
+
         [Header("VFX Pool (T024c)")]
         [SerializeField] private GameObject m_ExplosionPrefab;
-
-        [Header("Enemy Types (T026)")]
-        [SerializeField] private EnemyData[] m_EnemyTypes;
 
         [Header("Current Wave Info")]
         public int currentWave;                   // Текущая волна (начинается с 1)
@@ -37,23 +40,32 @@ namespace TankSurvival
         public float spawnTimer;                  // Таймер до следующего спавна
         public float spawnInterval;               // Интервал между спавнами (секунды)
 
-        [Header("Difficulty Multipliers (applied at wave start)")]
+        [Header("Wave Multipliers (applied at wave start)")]
         public float currentEnemyHealthMultiplier;
         public float currentEnemySpeedMultiplier;
 
+        // События волны (контракт сохранён — слушатели HUD)
+        public UnityEvent<int> OnWaveStarted;       // (waveNumber)
+        public UnityEvent<int, int> OnEnemySpawned; // (remaining, toSpawn)
+        public UnityEvent<int> OnEnemyDied;         // (remaining)
+        public UnityEvent<int> OnWaveCompleted;     // (waveNumber)
+        public UnityEvent OnAllWavesCompleted;
+
         private bool m_WaveActive;
-        private DifficultyData m_CurrentDifficulty;
+        private WaveData m_Wave;                  // План волн текущего раунда (T031)
+
         private PoolManager m_EnemyPool;
-        
-        // Список активных инстансов врагов текущей волны — для очистки и пула в Ф1/T023
+
+        // Список активных инстансов врагов текущей волны — для очистки и возврата в пул (T023)
         private readonly List<EnemyHealth> m_WaveEnemies = new List<EnemyHealth>();
 
-        // События
-        public UnityEvent<int> OnWaveStarted;     // (waveNumber)
-        public UnityEvent<int, int> OnEnemySpawned; // (remaining, toSpawn)
-        public UnityEvent<int> OnEnemyDied;       // (remaining) — renamed to avoid conflict
-        public UnityEvent<int> OnWaveCompleted;   // (waveNumber)
-        public UnityEvent OnAllWavesCompleted;
+        // T031: таймер паузы между волнами (замена Invoke из GameManager)
+        private float m_NextWaveTimer;
+
+        /// <summary>
+        /// Число волн в раунде — из плана волн (WaveData). Для HUD.
+        /// </summary>
+        public int TotalWaveCount => m_Wave != null ? m_Wave.waveCount : 0;
 
         private void Awake()
         {
@@ -63,12 +75,30 @@ namespace TankSurvival
                 return;
             }
             Instance = this;
+        }
+
+        private void Start()
+        {
+            EnsurePool();
+        }
+
+        /// <summary>
+        /// Создать пулы (враги, снаряды, VFX). Состав пула врагов берётся из каталога данных,
+        /// а DataCatalog.Init выполняется в Awake другого компонента — порядок Awake в Unity
+        /// не определён, поэтому обращение к каталогу вынесено из Awake в Start (T031).
+        /// </summary>
+        private void EnsurePool()
+        {
+            if (m_EnemyPool != null) return;
+
             m_EnemyPool = new PoolManager(BuildPrefabList(), m_EnemyPoolPrewarmCount, m_EnemyPoolMaxSize);
+
             if (m_ShellPrefab != null)
             {
                 m_EnemyPool.InitShellPool(m_ShellPrefab, m_ShellPoolPrewarmCount, m_ShellPoolMaxSize);
             }
-            // T024c: Инициализация пула VFX-эффектов взрыва
+
+            // T024c: пул VFX-эффектов взрыва
             if (m_ExplosionPrefab != null)
             {
                 var burstEffect = m_ExplosionPrefab.GetComponent<BurstEffect>();
@@ -80,34 +110,45 @@ namespace TankSurvival
         }
 
         /// <summary>
-        /// Начать новую волну с заданной сложностью.
-        /// T030: числа волны (враги, интервал, множители) — из плана волн DifficultyData.waveData.
+        /// T031: начать раунд. Число волн, их числа и переходы между ними — внутри WaveController,
+        /// GameManager только передаёт сложность и слушает OnAllWavesCompleted.
         /// </summary>
-        public void StartWave(DifficultyData difficulty, int waveNumber = 1, int totalWaves = 3)
+        public void StartRound(DifficultyData difficulty)
         {
-            // T030: источник чисел — данные (WaveData), «магических чисел» в коде не остаётся.
             WaveData wave = difficulty != null ? difficulty.waveData : null;
             if (wave == null)
             {
-                Debug.LogError("[WaveManager] У сложности не задан план волн (DifficultyData.waveData) — волна не начата.");
+                Debug.LogError("[WaveController] У сложности не задан план волн (DifficultyData.waveData) — раунд не начат.");
                 return;
             }
 
-            m_CurrentDifficulty = difficulty;
+            EnsurePool();
+
+            m_Wave = wave;
+            m_NextWaveTimer = 0f;
+
+            StartWave(1);
+        }
+
+        /// <summary>
+        /// Начать волну. T031: числа волны (врагов, интервал, множители) — только из плана волн (WaveData).
+        /// </summary>
+        private void StartWave(int waveNumber)
+        {
             currentWave = waveNumber;
             m_WaveActive = true;
 
             // Количество врагов: база первой волны + прирост за каждую следующую
-            enemiesToSpawn = wave.baseEnemyCount + (waveNumber - 1) * wave.enemiesPerWaveIncrease;
+            enemiesToSpawn = m_Wave.baseEnemyCount + (waveNumber - 1) * m_Wave.enemiesPerWaveIncrease;
             enemiesRemaining = enemiesToSpawn;
 
             // Множители HP/скорости: база плана волн + прирост за каждую следующую волну
-            currentEnemyHealthMultiplier = wave.enemyHealthMultiplier + (waveNumber - 1) * wave.healthMultiplierIncreasePerWave;
-            currentEnemySpeedMultiplier = wave.enemySpeedMultiplier + (waveNumber - 1) * wave.speedMultiplierIncreasePerWave;
+            currentEnemyHealthMultiplier = m_Wave.enemyHealthMultiplier + (waveNumber - 1) * m_Wave.healthMultiplierIncreasePerWave;
+            currentEnemySpeedMultiplier = m_Wave.enemySpeedMultiplier + (waveNumber - 1) * m_Wave.speedMultiplierIncreasePerWave;
 
             // Таймер спавна: интервал первой волны минус падение за каждую следующую, но не ниже минимума
-            spawnInterval = wave.spawnInterval - (waveNumber - 1) * wave.spawnIntervalDecreasePerWave;
-            if (spawnInterval < wave.minSpawnInterval) spawnInterval = wave.minSpawnInterval;
+            spawnInterval = m_Wave.spawnInterval - (waveNumber - 1) * m_Wave.spawnIntervalDecreasePerWave;
+            if (spawnInterval < m_Wave.minSpawnInterval) spawnInterval = m_Wave.minSpawnInterval;
             spawnTimer = spawnInterval; // Первый спавн сразу
 
             OnWaveStarted?.Invoke(currentWave);
@@ -122,6 +163,22 @@ namespace TankSurvival
 
         private void Update()
         {
+            // T031: пауза между волнами — поле-таймер вместо Invoke(nameof(StartNextWave), 3f)
+            if (m_NextWaveTimer > 0f)
+            {
+                m_NextWaveTimer -= Time.deltaTime;
+                if (m_NextWaveTimer > 0f)
+                {
+                    return;
+                }
+
+                m_NextWaveTimer = 0f;
+
+                // Пауза истекла — начинаем следующую волну (число волн проверено при завершении предыдущей)
+                StartWave(currentWave + 1);
+                return;
+            }
+
             if (!m_WaveActive) return;
 
             // Спавн врагов
@@ -149,26 +206,26 @@ namespace TankSurvival
         {
             if (spawnPoint == null)
             {
-                Debug.LogError("[WaveManager] Не указана точка спавна!");
+                Debug.LogError("[WaveController] Не указана точка спавна!");
                 return;
             }
 
-            bool hasTypes = m_EnemyTypes != null && m_EnemyTypes.Length > 0;
+            bool hasTypes = m_Wave != null && m_Wave.enemyTypes != null && m_Wave.enemyTypes.Length > 0;
             if (!hasTypes && (enemyPrefabs == null || enemyPrefabs.Length == 0))
             {
-                Debug.LogError("[WaveManager] Не заданы типы врагов (m_EnemyTypes) и нет префабов!");
+                Debug.LogError("[WaveController] В плане волн нет типов врагов (WaveData.enemyTypes) и нет префабов!");
                 return;
             }
 
             if (playerTransform == null)
             {
-                Debug.LogWarning("[WaveManager] Ссылка на игрока не указана!");
+                Debug.LogWarning("[WaveController] Ссылка на игрока не указана!");
                 return;
             }
 
             if (m_EnemyPool == null)
             {
-                Debug.LogError("[WaveManager] Пул врагов не инициализирован.");
+                Debug.LogError("[WaveController] Пул врагов не инициализирован.");
                 return;
             }
 
@@ -181,7 +238,7 @@ namespace TankSurvival
                 Mathf.Sin(angle) * radius
             );
 
-            // T026: тип врага — из данных (HP/скорость/XP/вес в ассете); без данных — прежний путь
+            // T031: тип врага — из состава волны (WaveData.enemyTypes) по весам; без данных — прежний путь
             EnemyData enemyType = PickEnemyType();
             GameObject enemyPrefab = enemyType != null
                 ? enemyType.prefab
@@ -189,7 +246,7 @@ namespace TankSurvival
 
             if (enemyPrefab == null)
             {
-                Debug.LogError("[WaveManager] У выбранного типа врага не задан префаб.");
+                Debug.LogError("[WaveController] У выбранного типа врага не задан префаб.");
                 return;
             }
 
@@ -201,7 +258,7 @@ namespace TankSurvival
                 playerTransform);
             if (health == null)
             {
-                Debug.LogError("[WaveManager] Не удалось получить врага из пула.");
+                Debug.LogError("[WaveController] Не удалось получить врага из пула.");
                 return;
             }
 
@@ -219,29 +276,37 @@ namespace TankSurvival
         }
 
         /// <summary>
-        /// T026: список префабов для пула — из данных о типах врагов; при пустом массиве
-        /// данных используется прежний массив префабов (сцены без заполненных данных).
+        /// T031: список префабов для пула врагов — все типы из состава волн всех сложностей каталога
+        /// (пул создаётся до выбора сложности, а состав волны — данные, поэтому берём объединение).
+        /// Благодаря этому новый тип врага в WaveData попадает в игру без правки сцены и кода.
+        /// При пустом каталоге используется прежний массив префабов.
         /// </summary>
         private GameObject[] BuildPrefabList()
         {
-            if (m_EnemyTypes != null && m_EnemyTypes.Length > 0)
+            List<DifficultyData> difficulties = DataCatalog.GetAllDifficulties();
+            if (difficulties != null && difficulties.Count > 0)
             {
-                var list = new List<GameObject>(m_EnemyTypes.Length);
-                for (int i = 0; i < m_EnemyTypes.Length; i++)
-                {
-                    var type = m_EnemyTypes[i];
-                    if (type == null || type.prefab == null)
-                    {
-                        Debug.LogError($"[WaveManager] EnemyData[{i}] без префаба — тип пропущен.");
-                        continue;
-                    }
+                var prefabs = new List<GameObject>();
 
-                    list.Add(type.prefab);
+                for (int d = 0; d < difficulties.Count; d++)
+                {
+                    DifficultyData difficulty = difficulties[d];
+                    WaveData wave = difficulty != null ? difficulty.waveData : null;
+                    if (wave == null || wave.enemyTypes == null) continue;
+
+                    for (int i = 0; i < wave.enemyTypes.Length; i++)
+                    {
+                        EnemyData type = wave.enemyTypes[i];
+                        if (type == null || type.prefab == null) continue;
+                        if (prefabs.Contains(type.prefab)) continue;
+
+                        prefabs.Add(type.prefab);
+                    }
                 }
 
-                if (list.Count > 0)
+                if (prefabs.Count > 0)
                 {
-                    return list.ToArray();
+                    return prefabs.ToArray();
                 }
             }
 
@@ -249,16 +314,36 @@ namespace TankSurvival
         }
 
         /// <summary>
-        /// T026: случайный тип врага из данных. Веса в составе волны (waveWeight) — Ф2/T031.
+        /// T031: тип врага для спавна — взвешенный случайный по EnemyData.waveWeight
+        /// из состава волны (WaveData.enemyTypes). Нет данных — null (прежний путь по префабам).
         /// </summary>
         private EnemyData PickEnemyType()
         {
-            if (m_EnemyTypes == null || m_EnemyTypes.Length == 0)
+            EnemyData[] types = m_Wave != null ? m_Wave.enemyTypes : null;
+            if (types == null || types.Length == 0)
             {
                 return null;
             }
 
-            return m_EnemyTypes[Random.Range(0, m_EnemyTypes.Length)];
+            float totalWeight = 0f;
+            for (int i = 0; i < types.Length; i++)
+            {
+                if (types[i] != null) totalWeight += types[i].waveWeight;
+            }
+
+            if (totalWeight <= 0f) return types[0];
+
+            float roll = Random.Range(0f, totalWeight);
+            float cumulative = 0f;
+            for (int i = 0; i < types.Length; i++)
+            {
+                if (types[i] == null) continue;
+
+                cumulative += types[i].waveWeight;
+                if (roll < cumulative) return types[i];
+            }
+
+            return types[types.Length - 1];
         }
 
         /// <summary>
@@ -309,6 +394,8 @@ namespace TankSurvival
 
             enemiesRemaining--;
 
+            OnEnemyDied?.Invoke(enemiesRemaining);
+
             if (enemiesRemaining <= 0 && enemiesToSpawn <= 0)
             {
                 EndWave();
@@ -316,7 +403,8 @@ namespace TankSurvival
         }
 
         /// <summary>
-        /// Завершить текущую волну
+        /// Завершить текущую волну. T031: если по плану волн (WaveData.waveCount) есть следующая —
+        /// запускается таймер паузы; если все волны пройдены — сигнал OnAllWavesCompleted.
         /// </summary>
         private void EndWave()
         {
@@ -324,8 +412,23 @@ namespace TankSurvival
 
             OnWaveCompleted?.Invoke(currentWave);
 
-            // Проверить, все ли волны пройдены
-            // (если нужно больше волн — GameManager решит, продолжать ли)
+            if (m_Wave != null && currentWave < m_Wave.waveCount)
+            {
+                // Пауза перед следующей волной — из данных (было Invoke("StartNextWave", 3f))
+                if (m_Wave.postWavePauseSeconds > 0f)
+                {
+                    m_NextWaveTimer = m_Wave.postWavePauseSeconds;
+                }
+                else
+                {
+                    StartWave(currentWave + 1);
+                }
+
+                return;
+            }
+
+            // Все волны раунда пройдены
+            OnAllWavesCompleted?.Invoke();
         }
 
         /// <summary>
@@ -334,13 +437,17 @@ namespace TankSurvival
         public bool IsWaveActive => m_WaveActive;
 
         /// <summary>
-        /// Принудительно завершить волну (для отладки или特殊ных ситуаций)
+        /// Принудительно завершить волну (выход из раунда/отладка).
+        /// T031: следующая волна НЕ планируется — раунд останавливает GameManager (ForceEndWave + ClearWaveEnemies).
         /// </summary>
         public void ForceEndWave()
         {
+            m_WaveActive = false;
+            m_NextWaveTimer = 0f;
             enemiesRemaining = 0;
             enemiesToSpawn = 0;
-            EndWave();
+
+            OnWaveCompleted?.Invoke(currentWave);
         }
 
         /// <summary>
@@ -355,7 +462,8 @@ namespace TankSurvival
         }
 
         /// <summary>
-        /// Очистить все инстансы врагов, созданные в текущей волне
+        /// Очистить все инстансы врагов, созданные в текущей волне, отменить переход к следующей
+        /// волне и сбросить счётчик волн (в меню раунд не идёт — было GameManager.m_CurrentWaveNumber, T085).
         /// </summary>
         public void ClearWaveEnemies()
         {
@@ -372,9 +480,13 @@ namespace TankSurvival
             EnemyRegistry.Clear();
             DamageSystem.OnEnemyKilled -= HandleEnemyDeath;
 
+            // T031: пауза и переход к следующей волне отменяются (сцена не перезагружается)
+            m_NextWaveTimer = 0f;
+            m_WaveActive = false;
+
+            currentWave = 0;
             enemiesRemaining = 0;
             enemiesToSpawn = 0;
-            m_WaveActive = false;
         }
     }
 }

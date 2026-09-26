@@ -1127,7 +1127,19 @@
 - **Сложность**: T3
 - **Обоснование метки**: переименование класса + сцена + логика спавна (многофайловая интеграция)
 - **Исполнитель**: Усиленный
-- **Готово**: [ ]
+- **Готово**: [x]
+- **Evidence**:
+  - Компиляция: `refresh_unity(compile)` → консоль без ошибок (осталось прежнее предупреждение `LevelManager.debugMode`).
+  - Сцена `Main.unity`: потерянный компонент `WaveManager` на объекте `Managers/WaveManager` снят (`RemoveMonoBehavioursWithMissingScript` → 1), добавлен `WaveController`, объект переименован в `Managers/WaveController`, `GameManager.m_WaveController` связан; сцена сохранена (`manage_scene save` → `Main.unity`).
+  - Play Mode, Easy (`Difficulty_Easy` → `Wave_Easy`): после старта раунда `currentWave=1`, `enemiesToSpawn=10`, `spawnInterval=2`, множители 1/1, `TotalWaveCount=3`, `PoolManager.Instance != null`, `playerTransform=body_standart(Clone)` — совпадает с ассетом.
+  - Пауза-таймер (вместо `Invoke`): после конца волны 1 через ~3 с → `currentWave=2`, `enemiesToSpawn=15`, `spawnInterval=1,95`, множители 1,2/1,1; затем `currentWave=3`, 20 врагов, 1,9, 1,4/1,2 — формулы из `WaveData`.
+  - Победа: конец последней волны → `OnAllWavesCompleted` → `EndRound` (`totalGamesPlayed` 28 → 29, сохранено 29, `RoundEndUI` активен, `IsWaveActive=false`).
+  - Сброс (`StartNewRound`): `currentWave=0`, `IsWaveActive=false`, `toSpawn=0`, `remaining=0`, живых врагов 0 — регрессия T085/T022 не сломана.
+- **Заметки**:
+  - 📋 Пул врагов строится из каталога (`DataCatalog.GetAllDifficulties()` → `WaveData.enemyTypes`, объединение по всем сложностям) в `Start()`/`StartRound()`, а не в `Awake()`: `DataCatalog.Init` выполняется в `Awake` другого компонента, порядок `Awake` в Unity не определён. Побочный эффект: `PoolManager.Instance` появляется в `Start`, а не в `Awake` (до первого выстрела пул не читает никто).
+  - 📋 Поле `spawnPoint` восстановлено ссылкой на сценовый `Spawn Point` (тот же объект, что у `PlayerManager.m_SpawnPoint`); в коде оно нигде не используется, кроме null-проверки — T032 заменит его на точки/зоны спавна.
+  - 📋 Значения `m_ShellPrefab=CompleteShell`, `m_ExplosionPrefab=CompleteShellExplosion` восстановлены поиском по типу компонента, `prewarm/max=32/300`, `shellPrewarm/max=16/100` — дефолты скрипта: Unity API не отдаёт сериализованные значения потерянного скрипта (`SerializedObject` видит только пустой слот компонента). Стоит глянуть в Inspector глазами.
+  - 📋 Устаревшие упоминания `WaveManager` остались в комментариях `EnemyAI.cs:25` и `EnemyHealth.cs:88` (вне файлов задачи) — не правил.
 
 ### T032: SpawnDirector — фиксированные точки/зоны спавна → T031
 - **Приоритет**: Высокий

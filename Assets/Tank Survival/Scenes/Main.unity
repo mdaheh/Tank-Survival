@@ -4022,7 +4022,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Tanks.Complete.GameManager
   m_CameraControl: {fileID: 1336069159}
   m_PlayerManager: {fileID: 1117343794}
-  m_WaveManager: {fileID: 1019273255}
+  m_WaveController: {fileID: 1019273255}
   m_LevelManager: {fileID: 1083707559}
   m_DifficultyPanel: {fileID: 0}
   m_LevelUpPanel: {fileID: 0}
@@ -4957,7 +4957,7 @@ GameObject:
   - component: {fileID: 1019273254}
   - component: {fileID: 1019273255}
   m_Layer: 0
-  m_Name: WaveManager
+  m_Name: WaveController
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -4987,21 +4987,18 @@ MonoBehaviour:
   m_GameObject: {fileID: 1019273253}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: cdf2e0f7c0b025c4bb132f2cd32aef7c, type: 3}
+  m_Script: {fileID: 11500000, guid: 88e3c04a996783e44af005bdf40cf727, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::TankSurvival.WaveManager
+  m_EditorClassIdentifier: Assembly-CSharp::TankSurvival.WaveController
   spawnPoint: {fileID: 313934840}
   playerTransform: {fileID: 0}
-  enemyPrefabs:
-  - {fileID: 6286968234082687938, guid: bb1da095ba36c3a49b06e5726038df55, type: 3}
+  enemyPrefabs: []
   m_EnemyPoolPrewarmCount: 32
   m_EnemyPoolMaxSize: 300
   m_ShellPrefab: {fileID: 7026209202416979157, guid: 008ecb1b70bec724fa2cd34255b0d8f8, type: 3}
   m_ShellPoolPrewarmCount: 16
   m_ShellPoolMaxSize: 100
   m_ExplosionPrefab: {fileID: 195792, guid: 537afde59eeba4c82897def1dccfba0a, type: 3}
-  m_EnemyTypes:
-  - {fileID: 11400000, guid: 5e5bdde7c863dd744b48abb1919a0422, type: 2}
   currentWave: 0
   enemiesRemaining: 0
   enemiesToSpawn: 0
