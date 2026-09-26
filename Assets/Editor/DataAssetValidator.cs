@@ -16,6 +16,27 @@ namespace TankSurvival.Editor
         [MenuItem("Tank Survival/Validate Data Assets")]
         public static void Validate()
         {
+            s_LastReport = BuildReport();
+
+            if (s_LastReport.StartsWith("OK"))
+            {
+                Debug.Log("[DataAssetValidator] " + s_LastReport);
+            }
+            else
+            {
+                Debug.LogError("[DataAssetValidator] " + s_LastReport);
+            }
+
+            EditorUtility.DisplayDialog("Валидация данных", s_LastReport, "OK");
+        }
+
+        /// <summary>
+        /// T078: сбор отчёта без побочных эффектов (без лога и модального диалога).
+        /// Вызывается пунктом меню; может вызываться и кодом (в т.ч. из проверок через MCP),
+        /// чтобы модальное окно не блокировало редактор.
+        /// </summary>
+        public static string BuildReport()
+        {
             var errors = new System.Collections.Generic.List<string>();
 
             // Валидация ChassisData
@@ -40,20 +61,9 @@ namespace TankSurvival.Editor
                 ValidateDataAsset(turret, path, "Turret", errors);
             }
 
-            s_LastReport = errors.Count == 0
+            return errors.Count == 0
                 ? "OK: Все ассеты данных корректны."
                 : $"Найдено ошибок: {errors.Count}\n" + string.Join("\n", errors);
-
-            if (errors.Count == 0)
-            {
-                Debug.Log("[DataAssetValidator] " + s_LastReport);
-                EditorUtility.DisplayDialog("Валидация данных", s_LastReport, "OK");
-            }
-            else
-            {
-                Debug.LogError("[DataAssetValidator] " + s_LastReport);
-                EditorUtility.DisplayDialog("Валидация данных", s_LastReport, "OK");
-            }
         }
 
         private static void ValidateDataAsset<T>(T asset, string path, string type, System.Collections.Generic.List<string> errors) where T : ScriptableObject
@@ -84,17 +94,36 @@ namespace TankSurvival.Editor
                 errors.Add($"{type} {path}: prefab не является .prefab файлом ({prefabPath})");
             }
 
-            // Проверка 3: для шасси должен иметь TurretMountPoint
+            // Проверка 3: шасси — состав компонентов задаётся префабом (T006–T008, T077)
             if (type == "Chassis")
             {
-                var mountPoint = prefab.GetComponentInChildren<TurretMountPoint>();
-                if (mountPoint == null)
+                if (prefab.GetComponentInChildren<TurretMountPoint>() == null)
                 {
                     errors.Add($"{type} {prefabPath}: префаб не имеет компонента TurretMountPoint");
                 }
+
+                if (prefab.GetComponent<PlayerMovement>() == null)
+                {
+                    errors.Add($"{type} {prefabPath}: префаб не имеет компонента PlayerMovement");
+                }
+
+                if (prefab.GetComponent<TankHealth>() == null)
+                {
+                    errors.Add($"{type} {prefabPath}: префаб не имеет компонента TankHealth");
+                }
+
+                var inputUser = prefab.GetComponent<TankInputUser>();
+                if (inputUser == null)
+                {
+                    errors.Add($"{type} {prefabPath}: префаб не имеет компонента TankInputUser");
+                }
+                else if (inputUser.ActionAsset == null)
+                {
+                    errors.Add($"{type} {prefabPath}: у TankInputUser не назначен ActionAsset");
+                }
             }
 
-            // Проверка 4: для турели должен иметь Shooting
+            // Проверка 4: турель — Shooting, его ссылки и данные радиуса (T024d/T025a/T025b)
             if (type == "Turret")
             {
                 var shooting = prefab.GetComponent<Shooting>();
@@ -102,6 +131,68 @@ namespace TankSurvival.Editor
                 {
                     errors.Add($"{type} {prefabPath}: префаб не имеет компонента Shooting");
                 }
+                else
+                {
+                    if (shooting.m_Shell == null)
+                    {
+                        errors.Add($"{type} {prefabPath}: у Shooting не назначен m_Shell");
+                    }
+
+                    if (shooting.m_FireTransform == null)
+                    {
+                        errors.Add($"{type} {prefabPath}: у Shooting не назначен m_FireTransform");
+                    }
+
+                    if (shooting.enemyMask.value == 0)
+                    {
+                        errors.Add($"{type} {prefabPath}: у Shooting пустой enemyMask");
+                    }
+                }
+
+                if (asset is TurretData turretData)
+                {
+                    if (turretData.baseExplosionRadius <= 0f)
+                    {
+                        errors.Add($"{type} {path}: baseExplosionRadius = {turretData.baseExplosionRadius} (должно быть > 0 — T025b)");
+                    }
+
+                    ValidateShellPrefab(turretData.shellPrefab, path, errors);
+                }
+            }
+        }
+
+        /// <summary>
+        /// T078: проверки префаба снаряда под контракт T024b/T024c/T024d.
+        /// </summary>
+        private static void ValidateShellPrefab(GameObject shell, string assetPath, System.Collections.Generic.List<string> errors)
+        {
+            if (shell == null)
+            {
+                errors.Add($"Turret {assetPath}: поле shellPrefab = null");
+                return;
+            }
+
+            var shellPath = AssetDatabase.GetAssetPath(shell);
+
+            if (shell.GetComponent<Projectile>() == null)
+            {
+                errors.Add($"Turret {assetPath} → shell {shellPath}: префаб снаряда не имеет компонента Projectile");
+            }
+
+            var body = shell.GetComponent<Rigidbody>();
+            if (body == null)
+            {
+                errors.Add($"Turret {assetPath} → shell {shellPath}: у префаба снаряда нет Rigidbody");
+            }
+            else if (body.useGravity)
+            {
+                errors.Add($"Turret {assetPath} → shell {shellPath}: useGravity = true (для снаряда должно быть false — T024b)");
+            }
+
+            var lights = shell.GetComponentsInChildren<Light>(true);
+            for (int i = 0; i < lights.Length; i++)
+            {
+                errors.Add($"Turret {assetPath} → shell {shellPath}: лишний Light на объекте '{lights[i].gameObject.name}' (удалён в T024b)");
             }
         }
     }
