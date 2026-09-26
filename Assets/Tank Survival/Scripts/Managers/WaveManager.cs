@@ -27,6 +27,9 @@ namespace TankSurvival
         [Header("VFX Pool (T024c)")]
         [SerializeField] private GameObject m_ExplosionPrefab;
 
+        [Header("Enemy Types (T026)")]
+        [SerializeField] private EnemyData[] m_EnemyTypes;
+
         [Header("Current Wave Info")]
         public int currentWave;                   // Текущая волна (начинается с 1)
         public int enemiesRemaining;              // Врагов, которые ещё живы
@@ -60,7 +63,7 @@ namespace TankSurvival
                 return;
             }
             Instance = this;
-            m_EnemyPool = new PoolManager(enemyPrefabs, m_EnemyPoolPrewarmCount, m_EnemyPoolMaxSize);
+            m_EnemyPool = new PoolManager(BuildPrefabList(), m_EnemyPoolPrewarmCount, m_EnemyPoolMaxSize);
             if (m_ShellPrefab != null)
             {
                 m_EnemyPool.InitShellPool(m_ShellPrefab, m_ShellPoolPrewarmCount, m_ShellPoolMaxSize);
@@ -142,9 +145,10 @@ namespace TankSurvival
                 return;
             }
 
-            if (enemyPrefabs == null || enemyPrefabs.Length == 0)
+            bool hasTypes = m_EnemyTypes != null && m_EnemyTypes.Length > 0;
+            if (!hasTypes && (enemyPrefabs == null || enemyPrefabs.Length == 0))
             {
-                Debug.LogError("[WaveManager] Не указаны префабы врагов!");
+                Debug.LogError("[WaveManager] Не заданы типы врагов (m_EnemyTypes) и нет префабов!");
                 return;
             }
 
@@ -169,8 +173,18 @@ namespace TankSurvival
                 Mathf.Sin(angle) * radius
             );
 
-            // Случайный тип врага
-            GameObject enemyPrefab = enemyPrefabs[Random.Range(0, enemyPrefabs.Length)];
+            // T026: тип врага — из данных (HP/скорость/XP/вес в ассете); без данных — прежний путь
+            EnemyData enemyType = PickEnemyType();
+            GameObject enemyPrefab = enemyType != null
+                ? enemyType.prefab
+                : enemyPrefabs[Random.Range(0, enemyPrefabs.Length)];
+
+            if (enemyPrefab == null)
+            {
+                Debug.LogError("[WaveManager] У выбранного типа врага не задан префаб.");
+                return;
+            }
+
             EnemyHealth health = m_EnemyPool.GetEnemy(
                 enemyPrefab,
                 spawnPosition,
@@ -183,11 +197,75 @@ namespace TankSurvival
                 return;
             }
 
+            // T026: базовые статы — из данных типа
+            if (enemyType != null)
+            {
+                ApplyEnemyType(health, enemyType);
+            }
+
             m_WaveEnemies.Add(health);
             DamageSystem.RegisterEnemy(health);
             EnemyRegistry.Register(health);
 
             OnEnemySpawned?.Invoke(enemiesRemaining, enemiesToSpawn);
+        }
+
+        /// <summary>
+        /// T026: список префабов для пула — из данных о типах врагов; при пустом массиве
+        /// данных используется прежний массив префабов (сцены без заполненных данных).
+        /// </summary>
+        private GameObject[] BuildPrefabList()
+        {
+            if (m_EnemyTypes != null && m_EnemyTypes.Length > 0)
+            {
+                var list = new List<GameObject>(m_EnemyTypes.Length);
+                for (int i = 0; i < m_EnemyTypes.Length; i++)
+                {
+                    var type = m_EnemyTypes[i];
+                    if (type == null || type.prefab == null)
+                    {
+                        Debug.LogError($"[WaveManager] EnemyData[{i}] без префаба — тип пропущен.");
+                        continue;
+                    }
+
+                    list.Add(type.prefab);
+                }
+
+                if (list.Count > 0)
+                {
+                    return list.ToArray();
+                }
+            }
+
+            return enemyPrefabs;
+        }
+
+        /// <summary>
+        /// T026: случайный тип врага из данных. Веса в составе волны (waveWeight) — Ф2/T031.
+        /// </summary>
+        private EnemyData PickEnemyType()
+        {
+            if (m_EnemyTypes == null || m_EnemyTypes.Length == 0)
+            {
+                return null;
+            }
+
+            return m_EnemyTypes[Random.Range(0, m_EnemyTypes.Length)];
+        }
+
+        /// <summary>
+        /// T026: применить базовые статы типа врага. База — данные, множители волны
+        /// уже применены пулом при выдаче (SetBaseHealth сохраняет множитель HP).
+        /// </summary>
+        private void ApplyEnemyType(EnemyHealth health, EnemyData data)
+        {
+            health.SetBaseHealth(data.maxHealth);
+
+            var movement = health.GetComponent<EnemyMovement>();
+            if (movement != null)
+            {
+                movement.m_Speed = data.moveSpeed * currentEnemySpeedMultiplier;
+            }
         }
 
         /// <summary>

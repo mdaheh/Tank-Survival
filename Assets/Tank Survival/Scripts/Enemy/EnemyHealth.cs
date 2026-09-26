@@ -51,6 +51,16 @@ namespace TankSurvival
             ResetHealth();
         }
 
+        /// <summary>
+        /// T026: задать базовое здоровье типа врага (источник — данные EnemyData).
+        /// Текущий множитель волны сохраняется: HP = база × множитель.
+        /// </summary>
+        public void SetBaseHealth(float value)
+        {
+            m_StartingHealth = Mathf.Max(1f, value);
+            ResetHealth();
+        }
+
         // Сохранено для совместимости с T020. Множитель задаётся заново,
         // а не накапливается умножением на предыдущий.
         public void ApplyHealthMultiplier(float multiplier)

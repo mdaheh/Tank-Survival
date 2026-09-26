@@ -5000,6 +5000,8 @@ MonoBehaviour:
   m_ShellPoolPrewarmCount: 16
   m_ShellPoolMaxSize: 100
   m_ExplosionPrefab: {fileID: 195792, guid: 537afde59eeba4c82897def1dccfba0a, type: 3}
+  m_EnemyTypes:
+  - {fileID: 11400000, guid: 5e5bdde7c863dd744b48abb1919a0422, type: 2}
   currentWave: 0
   enemiesRemaining: 0
   enemiesToSpawn: 0
