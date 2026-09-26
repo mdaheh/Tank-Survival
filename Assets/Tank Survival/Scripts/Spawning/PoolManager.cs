@@ -239,18 +239,12 @@ namespace TankSurvival
 
         private void OnGetShell(Projectile shell)
         {
-            shell.gameObject.SetActive(true);
-            // T024: включить коллайдер при выдаче из пула
-            Collider col = shell.GetComponent<Collider>();
-            if (col != null) col.enabled = true;
+            shell.OnGetFromPool();
         }
 
         private void OnReleaseShell(Projectile shell)
         {
-            // T024: отключить коллайдер при возврате в пул
-            Collider col = shell.GetComponent<Collider>();
-            if (col != null) col.enabled = false;
-            shell.gameObject.SetActive(false);
+            shell.OnReleaseFromPool();
         }
 
         private void OnDestroyShell(Projectile shell)

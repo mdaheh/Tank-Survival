@@ -6,7 +6,7 @@ namespace TankSurvival
     /// Снаряд — пул, жизнь по таймеру или попаданию, урон через IDamageable.
     /// Возвращается в пул вместо Destroy (T024).
     /// </summary>
-    public class Projectile : MonoBehaviour
+    public class Projectile : MonoBehaviour, IPoolable
     {
         [Header("Настройки")]
         public float m_LifeTime = 2f;              // Время жизни снаряда
@@ -182,7 +182,7 @@ namespace TankSurvival
         }
 
         // Для пула: восстановление при выдаче
-        private void OnGetFromPool()
+        public void OnGetFromPool()
         {
             m_Detonated = false;
             m_LifeTimer = m_LifeTime;
@@ -199,7 +199,7 @@ namespace TankSurvival
         }
 
         // Для пула: сброс состояния при возврате
-        private void OnReleaseFromPool()
+        public void OnReleaseFromPool()
         {
             m_Detonated = false;
             m_LifeTimer = 0f;
