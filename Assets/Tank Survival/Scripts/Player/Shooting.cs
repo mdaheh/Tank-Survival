@@ -19,6 +19,11 @@ namespace TankSurvival
         public float m_ShotCooldown = 0.3f;
         public float fireRange = 10f;
 
+        // T025b: база радиуса взрыва снаряда — данные турели (TurretData.baseExplosionRadius),
+        // записывается в PlayerManager.ApplyTurretStats по образцу fireRange
+        [Tooltip("База радиуса взрыва снаряда — передаётся из TurretData при спавне")]
+        public float m_BaseExplosionRadius = 1f;
+
         // T066: урон берётся из TurretData
         [Tooltip("Урон снаряда — передаётся из TurretData при спавне")]
         public float m_Damage = 5f;
@@ -166,10 +171,10 @@ namespace TankSurvival
             // Передаём урон из StatBlock на снаряд
             shell.m_MaxDamage = m_Damage;
 
-            // T025a: итоговый радиус = база снаряда (восстановлена при взятии из пула, T024b)
+            // T025a: итоговый радиус = база данных турели (T025b: Shooting.m_BaseExplosionRadius)
             // + бонус StatBlock. Передаём абсолютное значение — между выстрелами не накапливается.
             float radiusBonus = m_StatBlock != null ? m_StatBlock.GetExplosionRadiusBonus() : 0f;
-            shell.SetShotExplosionRadius(shell.m_ExplosionRadius + radiusBonus);
+            shell.SetShotExplosionRadius(m_BaseExplosionRadius + radiusBonus);
 
             float shellSpeed = 20f;
             Rigidbody rb = shell.GetComponent<Rigidbody>();

@@ -164,6 +164,7 @@ namespace TankSurvival
             }
             shooting.SetStatBlock(m_StatBlock);
             shooting.fireRange = turret.fireRange; // fireRange остаётся базой из данных (в StatBlock его нет)
+            shooting.m_BaseExplosionRadius = turret.baseExplosionRadius; // T025b: база радиуса взрыва — тоже данные турели
             shooting.RefreshStats();
             m_CachedShooting = shooting;
         }

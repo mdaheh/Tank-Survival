@@ -15,6 +15,7 @@ public class TurretData : ScriptableObject
     public float damage;
     public float fireRate;          // секунд между выстрелами
     public float fireRange;
+    public float baseExplosionRadius = 1f;  // T025b: база радиуса взрыва снаряда (в Ф2 переезжает в WeaponBehaviorSO вместе с типами атак)
 
     [Header("Unlock")]
     public int killsRequired;
