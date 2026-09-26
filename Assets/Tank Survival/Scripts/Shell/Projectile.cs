@@ -148,7 +148,7 @@ namespace TankSurvival
                 m_Collider.enabled = false;
             }
 
-            // Возвращаем снаряд в пул по внедрённой ссылке (T024d: снаряд не знает о LevelManager)
+            // Возвращаем снаряд в пул по внедрённой ссылке (T024d: снаряд не знает о LevelSystem)
             if (m_Pool == null)
             {
                 Debug.LogError("[Projectile] Пул не внедрён (SetPool) — снаряд не возвращён в пул.", this);

@@ -56,7 +56,7 @@ namespace TankSurvival
         public int m_OptionsCount = 3;                // Количество вариантов (обычно 3)
 
         [Header("References")]
-        public LevelManager m_LevelManager;           // Ссылка на LevelManager
+        public LevelSystem m_LevelManager;            // Ссылка на LevelSystem (T034)
 
         private List<UpgradeOptionData> m_CurrentOptions; // Текущие варианты
         private List<GameObject> m_CardInstances;     // Инстансы карточек
@@ -80,7 +80,7 @@ namespace TankSurvival
         }
 
         /// <summary>
-        /// Получить варианты улучшений от LevelManager и показать панель
+        /// Получить варианты улучшений от LevelSystem и показать панель
         /// </summary>
         public void OnUpgradeOptionsRequested(List<UpgradeOptionData> options)
         {

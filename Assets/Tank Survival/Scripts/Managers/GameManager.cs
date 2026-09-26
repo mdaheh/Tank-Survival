@@ -35,7 +35,7 @@ namespace TankSurvival
         public CameraControl m_CameraControl;
         public PlayerManager m_PlayerManager;
         public WaveController m_WaveController;
-        public LevelManager m_LevelManager;
+        public LevelSystem m_LevelManager;
 
         [Header("UI References")]
         public GameObject m_DifficultyPanel;

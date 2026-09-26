@@ -159,7 +159,7 @@ namespace TankSurvival
             m_Fired = true;
             
             // Получаем снаряд из пула PoolManager
-            Projectile shell = LevelManager.Instance.Pool.GetShell(
+            Projectile shell = LevelSystem.Instance.Pool.GetShell(
                 m_FireTransform.position, 
                 m_FireTransform.rotation);
                 

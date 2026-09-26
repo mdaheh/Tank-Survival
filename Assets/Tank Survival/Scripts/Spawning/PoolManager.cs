@@ -83,7 +83,7 @@ namespace TankSurvival
             }
 
             // T024c: пул VFX инициализируется вместе с пулом врагов
-            // Префаб взрыва будет назначен из LevelManager после создания PoolManager
+            // Префаб взрыва будет назначен из LevelSystem после создания PoolManager
         }
 
         /// <summary>

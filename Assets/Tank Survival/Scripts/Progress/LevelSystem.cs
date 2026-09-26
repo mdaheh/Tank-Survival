@@ -1,17 +1,16 @@
 using System.Collections.Generic;
-using System.Linq;
 using UnityEngine;
 using UnityEngine.Events;
 
 namespace TankSurvival
 {
     /// <summary>
-    /// Менеджер опыта и уровней — начисляет XP за убийства, повышает уровни,
-    /// предлагает улучшения при повышении уровня.
+    /// Система опыта и уровней (T034) — начисляет XP за убийства, повышает уровни,
+    /// предлагает улучшения при повышении уровня. HUD читает состояние через события.
     /// </summary>
-    public class LevelManager : MonoBehaviour
+    public class LevelSystem : MonoBehaviour
     {
-        public static LevelManager Instance { get; private set; }
+        public static LevelSystem Instance { get; private set; }
 
         [Header("UI References (для интеграции с UI)")]
         public GameObject levelUpPanel;                 // Панель выбора улучшений (устаревшее)
@@ -28,6 +27,9 @@ namespace TankSurvival
         private int m_CurrentXp = 0;
         private int m_XpRequired;
         private bool m_LevelUpPaused;                   // Пауза (показана панель улучшений)
+
+        // T034: переиспользуемый буфер Fisher–Yates для выбора 3 вариантов (без LINQ)
+        private readonly List<UpgradeOptionData> m_ShuffleBuffer = new();
 
         // События
         public UnityEvent<int> OnLevelUp;               // (newLevel)
@@ -59,7 +61,7 @@ namespace TankSurvival
             var curve = DataCatalog.GetLevelCurve();
             if (curve == null)
             {
-                Debug.LogWarning("[LevelManager] LevelCurve не назначен! Использую дефолтное значение (50 XP).");
+                Debug.LogWarning("[LevelSystem] LevelCurve не назначен! Использую дефолтное значение (50 XP).");
                 m_XpRequired = 50;
             }
             else
@@ -67,15 +69,6 @@ namespace TankSurvival
                 m_XpRequired = curve.GetXpRequiredForLevel(m_CurrentLevel);
             }
             UpdateUI();
-        }
-
-        private void Update()
-        {
-            // Обновляем UI прогресс-бара каждый кадр
-            if (xpBarFill != null && !m_LevelUpPaused)
-            {
-                xpBarFill.fillAmount = XpProgress;
-            }
         }
 
         /// <summary>
@@ -94,7 +87,8 @@ namespace TankSurvival
                 LevelUp();
             }
 
-            OnXpChanged?.Invoke(m_CurrentXp, m_XpRequired);
+            // T034: XP-бар/тексты обновляются по событию (UpdateUI шлёт OnXpChanged)
+            UpdateUI();
         }
 
         /// <summary>
@@ -124,17 +118,32 @@ namespace TankSurvival
         {
             m_LevelUpPaused = true;
 
-            // Выбрать случайные улучшения из пула (перемешиваем через временные ключи)
-            List<UpgradeOptionData> options = new();
-            var withKeys = DataCatalog.GetAllUpgrades().Select(u => (u, key: Random.value)).OrderBy(x => x.key).ToList();
-
-            int count = Mathf.Min(3, withKeys.Count); // Максимум 3 варианта
-            for (int i = 0; i < count; i++)
+            // T034: Fisher–Yates в переиспользуемый буфер (без LINQ/OrderBy — без аллокаций)
+            m_ShuffleBuffer.Clear();
+            List<UpgradeOptionData> upgrades = DataCatalog.GetAllUpgrades();
+            for (int i = 0; i < upgrades.Count; i++)
             {
-                options.Add(withKeys[i].u);
+                m_ShuffleBuffer.Add(upgrades[i]);
             }
 
-            OnUpgradeOptionsRequested?.Invoke(options);
+            int count = Mathf.Min(3, m_ShuffleBuffer.Count); // Максимум 3 варианта
+            for (int i = 0; i < count; i++)
+            {
+                int j = Random.Range(i, m_ShuffleBuffer.Count);   // j ∈ [i, Count)
+                UpgradeOptionData tmp = m_ShuffleBuffer[i];
+                m_ShuffleBuffer[i] = m_ShuffleBuffer[j];
+                m_ShuffleBuffer[j] = tmp;
+            }
+
+            // В буфере остаются ровно count вариантов — он же и payload события.
+            // Владение: слушатель потребляет список синхронно (панель пересоздаёт карточки
+            // при каждом запросе; новый level-up невозможен во время паузы m_LevelUpPaused).
+            if (count < m_ShuffleBuffer.Count)
+            {
+                m_ShuffleBuffer.RemoveRange(count, m_ShuffleBuffer.Count - count);
+            }
+
+            OnUpgradeOptionsRequested?.Invoke(m_ShuffleBuffer);
         }
 
         /// <summary>
@@ -144,7 +153,7 @@ namespace TankSurvival
         {
             if (upgrade == null)
             {
-                Debug.LogError("[LevelManager] Попытка применить null-улучшение!");
+                Debug.LogError("[LevelSystem] Попытка применить null-улучшение!");
                 return;
             }
 
@@ -197,7 +206,7 @@ namespace TankSurvival
         {
             if (!DataCatalog.GetLevelCurve().IsValidLevel(level))
             {
-                Debug.LogWarning($"[LevelManager] Недопустимый уровень: {level}");
+                Debug.LogWarning($"[LevelSystem] Недопустимый уровень: {level}");
                 return;
             }
 
