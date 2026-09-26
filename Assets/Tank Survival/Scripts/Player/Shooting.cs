@@ -166,6 +166,11 @@ namespace TankSurvival
             // Передаём урон из StatBlock на снаряд
             shell.m_MaxDamage = m_Damage;
 
+            // T025a: итоговый радиус = база снаряда (восстановлена при взятии из пула, T024b)
+            // + бонус StatBlock. Передаём абсолютное значение — между выстрелами не накапливается.
+            float radiusBonus = m_StatBlock != null ? m_StatBlock.GetExplosionRadiusBonus() : 0f;
+            shell.SetShotExplosionRadius(shell.m_ExplosionRadius + radiusBonus);
+
             float shellSpeed = 20f;
             Rigidbody rb = shell.GetComponent<Rigidbody>();
             if (rb != null)

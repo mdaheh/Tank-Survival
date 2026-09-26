@@ -168,6 +168,15 @@ namespace TankSurvival
             m_Pool = pool;
         }
 
+        /// <summary>
+        /// T025a: приём итогового радиуса взрыва на один выстрел (база префаба + бонус StatBlock).
+        /// Значение абсолютное: база восстанавливается в OnGetFromPool (T024b), накопления нет.
+        /// </summary>
+        public void SetShotExplosionRadius(float radius)
+        {
+            m_ExplosionRadius = radius;
+        }
+
         // Для пула: восстановление при выдаче
         public void OnGetFromPool()
         {

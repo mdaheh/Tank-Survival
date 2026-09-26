@@ -27,6 +27,7 @@ namespace TankSurvival
         public float turnSpeedBonus;
         public float maxHealthBonus;
         public float xpBonus;
+        public float explosionRadiusBonus;   // T025a: прибавка к радиусу взрыва снаряда
 
         /// <summary>
         /// Итоговый урон
@@ -59,6 +60,12 @@ namespace TankSurvival
         public float GetXpReward() => baseXpReward + xpBonus;
 
         /// <summary>
+        /// T025a: прибавка к радиусу взрыва снаряда.
+        /// База радиуса живёт в префабе снаряда, здесь хранится только модификатор.
+        /// </summary>
+        public float GetExplosionRadiusBonus() => explosionRadiusBonus;
+
+        /// <summary>
         /// Сбросить все модификаторы к нулю
         /// </summary>
         public void Reset()
@@ -69,6 +76,7 @@ namespace TankSurvival
             turnSpeedBonus = 0f;
             maxHealthBonus = 0f;
             xpBonus = 0f;
+            explosionRadiusBonus = 0f;   // T025a
         }
 
         // === Add-методы для улучшений ===
@@ -79,5 +87,10 @@ namespace TankSurvival
         public void AddTurnSpeed(float amount) => turnSpeedBonus += amount;
         public void AddMaxHealth(float amount) => maxHealthBonus += amount;
         public void AddXp(float amount) => xpBonus += amount;
+
+        /// <summary>
+        /// T025a: увеличить радиус взрыва снаряда
+        /// </summary>
+        public void AddExplosionRadius(float amount) => explosionRadiusBonus += amount;
     }
 }
