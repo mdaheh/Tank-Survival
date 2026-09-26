@@ -201,8 +201,12 @@ namespace TankSurvival
                 return;
             }
 
+            // T074: счётчик волны меняется только для врагов текущей волны.
+            // Смерть «чужого» врага (например, взятого из пула вне волны) не должна
+            // уменьшать enemiesRemaining и запускать EndWave.
             int index = m_WaveEnemies.IndexOf(health);
-            if (index >= 0)
+            bool belongsToWave = index >= 0;
+            if (belongsToWave)
             {
                 int lastIndex = m_WaveEnemies.Count - 1;
                 m_WaveEnemies[index] = m_WaveEnemies[lastIndex];
@@ -211,6 +215,11 @@ namespace TankSurvival
 
             // PoolManager снимает регистрацию перед деактивацией объекта.
             m_EnemyPool?.Release(health);
+
+            if (!belongsToWave)
+            {
+                return;
+            }
 
             enemiesRemaining--;
 
