@@ -353,6 +353,9 @@ namespace TankSurvival
         {
             health.SetBaseHealth(data.maxHealth);
 
+            // T033: награда XP за убийство — из данных типа врага
+            health.SetXpReward(data.xpReward);
+
             var movement = health.GetComponent<EnemyMovement>();
             if (movement != null)
             {

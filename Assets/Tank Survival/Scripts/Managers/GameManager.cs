@@ -240,11 +240,17 @@ namespace TankSurvival
             // Сохраняем прогресс
             SaveSystem.Save(m_PlayerProgress);
 
-            // Даем XP
+            // T033: XP за убийство — из данных врага (EnemyData.xpReward, проставлено при спавне),
+            // хардкода XP в коде нет.
             if (m_LevelManager != null)
             {
-                int xpAmount = 10; // Базовый XP за убийство
-                m_LevelManager.AddXp(xpAmount);
+                EnemyHealth enemyHealth = damageable as EnemyHealth;
+                int xpAmount = enemyHealth != null ? Mathf.RoundToInt(enemyHealth.XpReward) : 0;
+
+                if (xpAmount > 0)
+                {
+                    m_LevelManager.AddXp(xpAmount);
+                }
             }
         }
 

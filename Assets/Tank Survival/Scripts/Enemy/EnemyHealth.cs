@@ -12,6 +12,9 @@ namespace TankSurvival
         [Header("Stats")]
         [SerializeField] private float m_StartingHealth = 30f;
 
+        [Tooltip("T033: XP за убийство. Источник — EnemyData.xpReward (проставляет WaveController при спавне).")]
+        [SerializeField, Min(0f)] private float m_XpReward;
+
         private float m_CurrentHealth;
         private float m_HealthMultiplier = 1f;
 
@@ -27,6 +30,11 @@ namespace TankSurvival
         public float CurrentHealth => m_CurrentHealth;
         public float MaxHealth => m_StartingHealth * m_HealthMultiplier;
         public bool IsAlive => !m_Dead;
+
+        /// <summary>
+        /// T033: XP за убийство — данные врага (EnemyData.xpReward); читает GameManager по событию смерти.
+        /// </summary>
+        public float XpReward => m_XpReward;
 
         private void OnEnable()
         {
@@ -59,6 +67,14 @@ namespace TankSurvival
         {
             m_StartingHealth = Mathf.Max(1f, value);
             ResetHealth();
+        }
+
+        /// <summary>
+        /// T033: задать награду XP из данных типа врага (EnemyData.xpReward).
+        /// </summary>
+        public void SetXpReward(float value)
+        {
+            m_XpReward = Mathf.Max(0f, value);
         }
 
         // Сохранено для совместимости с T020. Множитель задаётся заново,
