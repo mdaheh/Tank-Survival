@@ -160,6 +160,9 @@ MonoBehaviour:
   m_MaxDamage: 5
   m_ExplosionForce: 1
   m_ExplosionRadius: 1
+  m_TankMask:
+    serializedVersion: 2
+    m_Bits: 2560
   m_ExplosionAudio: {fileID: 8300000, guid: 3a77defcde1caaa40b6f7502547e0c4e, type: 3}
   m_BurstEffect: {fileID: 6950372259490975824}
 --- !u!1001 &6950372259491175068

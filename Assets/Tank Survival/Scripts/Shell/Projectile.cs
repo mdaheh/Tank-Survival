@@ -13,6 +13,7 @@ namespace TankSurvival
         public float m_MaxDamage = 5f;             // Максимальный урон (передаётся из Shooting)
         public float m_ExplosionForce = 1f;        // Сила взрыва
         public float m_ExplosionRadius = 1f;       // Радиус взрыва
+        public LayerMask m_TankMask;               // Слои, которые задевает взрыв (T024d)
         
         [Header("Аудио")]
         public AudioClip m_ExplosionAudio;         // Звук взрыва (копия из префаба)
@@ -22,8 +23,14 @@ namespace TankSurvival
 
         private float m_LifeTimer;
         private bool m_Detonated;
+        private bool m_HasTarget;                  // цель зафиксирована попаданием (вместо сентинела, T024d)
         private Vector3 m_LastKnownTargetPos;
         private Collider m_Collider;
+        private PoolManager m_Pool;                // пул внедряется при создании (T024d)
+
+        // Переиспользуемый буфер запроса: ноль аллокаций в горячем пути (T024d)
+        private const int k_MaxOverlapResults = 32;
+        private readonly Collider[] m_OverlapResults = new Collider[k_MaxOverlapResults];
 
         // Базовые значения из префаба: восстановление при взятии из пула не даёт
         // бонусам апгрейдов накапливаться на инстансах, побывавших в пуле (T024b)
@@ -71,6 +78,7 @@ namespace TankSurvival
             Transform t = target.Transform;
             Rigidbody rb = t.GetComponent<Rigidbody>();
             m_LastKnownTargetPos = rb != null ? rb.position : t.position;
+            m_HasTarget = true;
             Detonate();
         }
 
@@ -80,7 +88,7 @@ namespace TankSurvival
             m_Detonated = true;
 
             // Наносим урон если есть цель
-            if (m_LastKnownTargetPos != Vector3.zero)
+            if (m_HasTarget)
             {
                 ApplyDamageTo(m_LastKnownTargetPos);
             }
@@ -94,12 +102,12 @@ namespace TankSurvival
 
         private void ApplyDamageTo(Vector3 center)
         {
-            // Собираем все colliders в сфере взрыва
-            Collider[] colliders = Physics.OverlapSphere(center, m_ExplosionRadius, ~0);
+            // Запрос без аллокаций: переиспользуемый буфер и маска слоёв (T024d)
+            int hitCount = Physics.OverlapSphereNonAlloc(center, m_ExplosionRadius, m_OverlapResults, m_TankMask);
 
-            for (int i = 0; i < colliders.Length; i++)
+            for (int i = 0; i < hitCount; i++)
             {
-                Rigidbody rb = colliders[i].GetComponent<Rigidbody>();
+                Rigidbody rb = m_OverlapResults[i].GetComponent<Rigidbody>();
                 if (rb == null) continue;
 
                 IDamageable damageable = rb.GetComponent<IDamageable>();
@@ -179,16 +187,22 @@ namespace TankSurvival
                 m_Collider.enabled = false;
             }
 
-            // Возвращаем снаряд в пул через PoolManager
-            if (LevelManager.Instance != null && LevelManager.Instance.Pool != null)
+            // Возвращаем снаряд в пул по внедрённой ссылке (T024d: снаряд не знает о LevelManager)
+            if (m_Pool == null)
             {
-                LevelManager.Instance.Pool.ReleaseShell(this);
+                Debug.LogError("[Projectile] Пул не внедрён (SetPool) — снаряд не возвращён в пул.", this);
+                return;
             }
-            else
-            {
-                // Fallback: уничтожаем если пул не доступен
-                Object.Destroy(gameObject);
-            }
+
+            m_Pool.ReleaseShell(this);
+        }
+
+        /// <summary>
+        /// Внедрение пула при создании снаряда (вызывает PoolManager.CreateShell, T024d).
+        /// </summary>
+        public void SetPool(PoolManager pool)
+        {
+            m_Pool = pool;
         }
 
         // Для пула: восстановление при выдаче
@@ -204,6 +218,7 @@ namespace TankSurvival
             m_LifeTimer = m_LifeTime;
 
             m_LastKnownTargetPos = Vector3.zero;
+            m_HasTarget = false;
             CancelInvoke();
 
             // Включаем коллайдер
@@ -221,6 +236,7 @@ namespace TankSurvival
             m_Detonated = false;
             m_LifeTimer = 0f;
             m_LastKnownTargetPos = Vector3.zero;
+            m_HasTarget = false;
             CancelInvoke();
 
             // Отключаем коллайдер пока объект в пуле

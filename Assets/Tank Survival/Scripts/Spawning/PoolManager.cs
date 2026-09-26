@@ -234,6 +234,10 @@ namespace TankSurvival
         private Projectile CreateShell(Projectile prefab)
         {
             Projectile shell = Object.Instantiate(prefab, Vector3.zero, Quaternion.identity);
+
+            // T024d: единственная точка доступа снаряда к пулу — внедрённая ссылка
+            shell.SetPool(this);
+
             return shell;
         }
 
