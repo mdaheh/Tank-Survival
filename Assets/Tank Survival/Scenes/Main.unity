@@ -4046,6 +4046,7 @@ MonoBehaviour:
       turnSpeedBonus: 0
       maxHealthBonus: 0
       xpBonus: 0
+      explosionRadiusBonus: 0
     selectedChassisId: 0
     selectedTurretId: 0
     selectedDifficultyIndex: 0
@@ -4998,6 +4999,7 @@ MonoBehaviour:
   m_ShellPrefab: {fileID: 7026209202416979157, guid: 008ecb1b70bec724fa2cd34255b0d8f8, type: 3}
   m_ShellPoolPrewarmCount: 16
   m_ShellPoolMaxSize: 100
+  m_ExplosionPrefab: {fileID: 195792, guid: 537afde59eeba4c82897def1dccfba0a, type: 3}
   currentWave: 0
   enemiesRemaining: 0
   enemiesToSpawn: 0
@@ -7005,6 +7007,7 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 3f27fbde6a2254149bcc055d1c280a47, type: 2}
   - {fileID: 11400000, guid: bd12d3f454cfe2f42ad1ce468a95015f, type: 2}
   - {fileID: 11400000, guid: ff1a851566c111540b3056736310b6fd, type: 2}
+  - {fileID: 11400000, guid: 5f2a722057c3a2247b15051c89939a3e, type: 2}
   levelCurve: {fileID: 11400000, guid: cdb19045611c73b4fa119fd66079f027, type: 2}
 --- !u!1 &1461794156
 GameObject:

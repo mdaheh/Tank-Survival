@@ -65,7 +65,8 @@ namespace TankSurvival
                     stats.AddMaxHealth(value);
                     break;
                 case UpgradeType.ExplosionRadius:
-                    ApplyExplosionRadius();
+                    // T025a/T025d: владелец модификатора — StatBlock (снаряд получает базу+бонус при выстреле)
+                    stats.AddExplosionRadius(value);
                     break;
             }
 
@@ -73,13 +74,6 @@ namespace TankSurvival
             PlayerManager.Instance.RefreshStats();
         }
 
-        private void ApplyExplosionRadius()
-        {
-            // T024: Projectile вместо ShellExplosion
-            var projectile = FindAnyObjectByType<Projectile>();
-            if (projectile)
-                projectile.m_ExplosionRadius += value;
-        }
     }
 
 }
