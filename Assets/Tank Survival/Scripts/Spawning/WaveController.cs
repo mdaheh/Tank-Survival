@@ -17,8 +17,8 @@ namespace TankSurvival
         public static WaveController Instance { get; private set; }
 
         [Header("Spawn Settings")]
-        public Transform spawnPoint;            // Точка спавна врагов (по краям карты; T032 заменит на точки/зоны)
-        public Transform playerTransform;       // Ссылка на игрока (для AI и позиции спавна)
+        [SerializeField] private SpawnDirector m_SpawnDirector; // T032: точки/зоны спавна — данные сцены
+        public Transform playerTransform;       // Ссылка на игрока (для AI)
         public GameObject[] enemyPrefabs;       // Прежний путь: префабы, если состав волны не задан данными
 
         [Header("Enemy Pool")]
@@ -204,9 +204,9 @@ namespace TankSurvival
         /// </summary>
         private void SpawnEnemy()
         {
-            if (spawnPoint == null)
+            if (m_SpawnDirector == null)
             {
-                Debug.LogError("[WaveController] Не указана точка спавна!");
+                Debug.LogError("[WaveController] Не назначен SpawnDirector — точки спавна врагов не заданы.");
                 return;
             }
 
@@ -229,14 +229,13 @@ namespace TankSurvival
                 return;
             }
 
-            // Случайная точка спавна (добавляем случайное смещение по кругу)
-            float angle = Random.Range(0f, Mathf.PI * 2f);
-            float radius = 15f; // Радиус спавна вокруг игрока
-            Vector3 spawnPosition = playerTransform.position + new Vector3(
-                Mathf.Cos(angle) * radius,
-                0f,
-                Mathf.Sin(angle) * radius
-            );
+            // T032: позиция — из точек/зон спавна (данные сцены), а не круг вокруг игрока
+            Vector3 spawnPosition;
+            if (!m_SpawnDirector.TryGetSpawnPosition(out spawnPosition))
+            {
+                Debug.LogError("[WaveController] В SpawnDirector нет валидных точек спавна.");
+                return;
+            }
 
             // T031: тип врага — из состава волны (WaveData.enemyTypes) по весам; без данных — прежний путь
             EnemyData enemyType = PickEnemyType();
