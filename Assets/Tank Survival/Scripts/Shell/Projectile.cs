@@ -25,9 +25,19 @@ namespace TankSurvival
         private Vector3 m_LastKnownTargetPos;
         private Collider m_Collider;
 
+        // Базовые значения из префаба: восстановление при взятии из пула не даёт
+        // бонусам апгрейдов накапливаться на инстансах, побывавших в пуле (T024b)
+        private float m_BaseMaxDamage;
+        private float m_BaseExplosionRadius;
+        private float m_BaseLifeTime;
+
         private void Awake()
         {
             m_Collider = GetComponent<Collider>();
+
+            m_BaseMaxDamage = m_MaxDamage;
+            m_BaseExplosionRadius = m_ExplosionRadius;
+            m_BaseLifeTime = m_LifeTime;
         }
 
         private void Update()
@@ -185,7 +195,14 @@ namespace TankSurvival
         public void OnGetFromPool()
         {
             m_Detonated = false;
+
+            // Возврат к базам префаба: значения, изменённые на предыдущем выстреле,
+            // не накапливаются между выстрелами (T024b)
+            m_MaxDamage = m_BaseMaxDamage;
+            m_ExplosionRadius = m_BaseExplosionRadius;
+            m_LifeTime = m_BaseLifeTime;
             m_LifeTimer = m_LifeTime;
+
             m_LastKnownTargetPos = Vector3.zero;
             CancelInvoke();
 
