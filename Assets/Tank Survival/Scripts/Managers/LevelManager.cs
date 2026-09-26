@@ -184,6 +184,10 @@ namespace TankSurvival
             m_CurrentXp = 0;
             m_XpRequired = DataCatalog.GetLevelCurve().GetXpRequiredForLevel(1);
             m_LevelUpPaused = false;
+
+            // T085: сброс раунда обязан обновить UI уровня/XP — иначе после возврата в меню
+            // в HUD остаются значения прошлого забега
+            UpdateUI();
         }
 
         /// <summary>

@@ -383,8 +383,13 @@ namespace TankSurvival
 
             // 3. Сброс состояния игры
             m_CurrentState = GameState.MainMenu;
-            m_CurrentWaveNumber = 1;
+            m_CurrentWaveNumber = 0; // T085: в меню раунд не идёт (было 1 — «раунд активен» после поражения)
+
             m_PlayerProgress.ResetSession();
+
+            // T085: сбрасываем прогресс уровня/XP раунда — иначе в меню остаётся XP прошлого забега
+            if (m_LevelManager != null)
+                m_LevelManager.ResetRound();
 
             // T018: сброс RunContext
             if (m_RunContext != null)
@@ -400,10 +405,22 @@ namespace TankSurvival
             // 5. Сбрасываем HUD
             UpdateUI();
 
-            // T067: показываем превью и dropdown'ы при возврате в меню
+            // T067/T085: возвращаем превью, dropdown'ы и КОРЕНЬ стартового меню.
+            // Корень меню скрывается GameUIHandler.StartGame() при старте забега, а
+            // ShowPreviewAndDropdowns() восстанавливает только превью и dropdown'ы: без корня
+            // после поражения кнопки меню недоступны («лимб», T082/T084).
             var gameUI = FindAnyObjectByType<GameUIHandler>();
             if (gameUI != null)
+            {
                 gameUI.ShowPreviewAndDropdowns();
+
+                if (gameUI.m_StartMenuRoot != null)
+                    gameUI.m_StartMenuRoot.gameObject.SetActive(true);
+
+                // В меню экранная кнопка паузы скрыта (как в свежей сессии) — её показывает забег
+                if (gameUI.m_PauseMenuButton != null)
+                    gameUI.m_PauseMenuButton.gameObject.SetActive(false);
+            }
         }
 
         /// <summary>
