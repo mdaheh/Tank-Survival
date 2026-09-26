@@ -71,10 +71,6 @@ namespace TankSurvival.Editor
         {
             string[] names = { "Easy", "Medium", "Hard" };
             int[] ids = { 0, 1, 2 };
-            int[] baseEnemies = { 10, 20, 35 };
-            float[] spawnInterval = { 2f, 1.5f, 1f };
-            float[] healthMult = { 1f, 1.5f, 2f };
-            float[] speedMult = { 1f, 1.2f, 1.5f };
 
             for (int i = 0; i < names.Length; i++)
             {
@@ -82,11 +78,9 @@ namespace TankSurvival.Editor
                 DifficultyData data = ScriptableObject.CreateInstance<DifficultyData>();
                 data.id = ids[i];
                 data.displayName = names[i];
-                data.baseEnemyCount = baseEnemies[i];
-                data.spawnInterval = spawnInterval[i];
-                data.enemyHealthMultiplier = healthMult[i];
-                data.enemySpeedMultiplier = speedMult[i];
-                
+                // T030: числа волн живут в плане волн (WaveData) — сложность только ссылается на него
+                data.waveData = AssetDatabase.LoadAssetAtPath<WaveData>($"Assets/Tank Survival/ScriptableObjects/Waves/Wave_{names[i]}.asset");
+
                 AssetDatabase.CreateAsset(data, path);
                 Debug.Log($"Создан: {path} (id={data.id})");
             }

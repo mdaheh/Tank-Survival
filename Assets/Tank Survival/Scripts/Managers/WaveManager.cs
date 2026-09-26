@@ -80,26 +80,34 @@ namespace TankSurvival
         }
 
         /// <summary>
-        /// Начать новую волну с заданной сложностью
+        /// Начать новую волну с заданной сложностью.
+        /// T030: числа волны (враги, интервал, множители) — из плана волн DifficultyData.waveData.
         /// </summary>
         public void StartWave(DifficultyData difficulty, int waveNumber = 1, int totalWaves = 3)
         {
+            // T030: источник чисел — данные (WaveData), «магических чисел» в коде не остаётся.
+            WaveData wave = difficulty != null ? difficulty.waveData : null;
+            if (wave == null)
+            {
+                Debug.LogError("[WaveManager] У сложности не задан план волн (DifficultyData.waveData) — волна не начата.");
+                return;
+            }
+
             m_CurrentDifficulty = difficulty;
             currentWave = waveNumber;
             m_WaveActive = true;
 
-            // Рассчитать количество врагов: база * коэффициент волны
-            int baseCount = difficulty.baseEnemyCount;
-            enemiesToSpawn = baseCount + (waveNumber - 1) * 5; // +5 врагов за каждую волну
+            // Количество врагов: база первой волны + прирост за каждую следующую
+            enemiesToSpawn = wave.baseEnemyCount + (waveNumber - 1) * wave.enemiesPerWaveIncrease;
             enemiesRemaining = enemiesToSpawn;
 
-            // Применить множители сложности
-            currentEnemyHealthMultiplier = difficulty.enemyHealthMultiplier + (waveNumber - 1) * 0.2f;
-            currentEnemySpeedMultiplier = difficulty.enemySpeedMultiplier + (waveNumber - 1) * 0.1f;
+            // Множители HP/скорости: база плана волн + прирост за каждую следующую волну
+            currentEnemyHealthMultiplier = wave.enemyHealthMultiplier + (waveNumber - 1) * wave.healthMultiplierIncreasePerWave;
+            currentEnemySpeedMultiplier = wave.enemySpeedMultiplier + (waveNumber - 1) * wave.speedMultiplierIncreasePerWave;
 
-            // Таймер спавна
-            spawnInterval = difficulty.spawnInterval - (waveNumber - 1) * 0.05f;
-            if (spawnInterval < 0.3f) spawnInterval = 0.3f; // Минимальный интервал
+            // Таймер спавна: интервал первой волны минус падение за каждую следующую, но не ниже минимума
+            spawnInterval = wave.spawnInterval - (waveNumber - 1) * wave.spawnIntervalDecreasePerWave;
+            if (spawnInterval < wave.minSpawnInterval) spawnInterval = wave.minSpawnInterval;
             spawnTimer = spawnInterval; // Первый спавн сразу
 
             OnWaveStarted?.Invoke(currentWave);

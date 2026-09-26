@@ -15,8 +15,4 @@ MonoBehaviour:
   id: 1
   displayName: Medium
   killsRequiredToUnlock: 0
-  isUnlocked: 0
-  baseEnemyCount: 20
-  spawnInterval: 1.5
-  enemyHealthMultiplier: 1.5
-  enemySpeedMultiplier: 1.2
+  waveData: {fileID: 11400000, guid: 50ded577e67083747a4d7ce1c1be1546, type: 2}

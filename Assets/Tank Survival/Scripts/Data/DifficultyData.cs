@@ -1,4 +1,5 @@
 using UnityEngine;
+using TankSurvival; // WaveData — план волн (T030)
 
 [CreateAssetMenu(fileName = "NewDifficulty", menuName = "Tank Survival/Difficulty")]
 public class DifficultyData : ScriptableObject
@@ -9,11 +10,10 @@ public class DifficultyData : ScriptableObject
 
     [Header("Unlock")]
     public int killsRequiredToUnlock; // убийств для разблокировки
-    public bool isUnlocked;           // читается из PlayerProgress
 
-    [Header("Wave Settings")]
-    public int baseEnemyCount;
-    public float spawnInterval;
-    public float enemyHealthMultiplier;
-    public float enemySpeedMultiplier;
+    // T030: разблокировка — из PlayerProgress (§2), поле isUnlocked удалено.
+    // T030: числа волн (количество врагов, интервал, множители) — в WaveData, здесь только ссылка на план волн.
+    [Header("Wave Plan")]
+    [Tooltip("План волн этой сложности: число волн, состав по весам EnemyData.waveWeight и числа спавна живут в WaveData.")]
+    public WaveData waveData;
 }

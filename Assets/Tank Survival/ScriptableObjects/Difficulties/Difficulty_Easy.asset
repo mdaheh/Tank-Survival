@@ -15,8 +15,4 @@ MonoBehaviour:
   id: 0
   displayName: Easy
   killsRequiredToUnlock: 0
-  isUnlocked: 0
-  baseEnemyCount: 10
-  spawnInterval: 2
-  enemyHealthMultiplier: 1
-  enemySpeedMultiplier: 1
+  waveData: {fileID: 11400000, guid: bdc6abb4ecbb21741b1ab9d5a4c00ac8, type: 2}
