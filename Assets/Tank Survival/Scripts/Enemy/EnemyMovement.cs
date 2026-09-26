@@ -105,28 +105,5 @@ namespace TankSurvival
         {
             m_Player = player;
         }
-
-        /// <summary>
-        /// Отбрасывание от взрыва
-        /// </summary>
-        public void AddExplosionForce(float explosionForce, Vector3 explosionPosition, float explosionRadius, float upwardsModifier = 0f)
-        {
-            Vector3 dir = (transform.position - explosionPosition);
-            float distance = dir.magnitude;
-
-            if (upwardsModifier != 0)
-            {
-                dir.y += upwardsModifier;
-                dir.Normalize();
-            }
-            else
-            {
-                dir = dir.normalized;
-            }
-
-            float attenuation = 1f - Mathf.Clamp01(distance / explosionRadius);
-            Vector3 velocityChange = dir * (explosionForce * attenuation);
-            m_Rigidbody.AddForce(velocityChange, ForceMode.VelocityChange);
-        }
     }
 }

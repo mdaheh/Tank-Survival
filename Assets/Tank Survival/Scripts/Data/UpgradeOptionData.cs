@@ -14,8 +14,7 @@ namespace TankSurvival
         MoveSpeed,        // Увеличение скорости движения
         TurnSpeed,        // Увеличение скорости поворота
         MaxHealth,        // Увеличение максимального здоровья
-        ExplosionRadius,  // Увеличение радиуса взрыва
-        ExplosionForce    // Увеличение силы взрыва
+        ExplosionRadius   // Увеличение радиуса взрыва
     }
 
     /// <summary>
@@ -68,9 +67,6 @@ namespace TankSurvival
                 case UpgradeType.ExplosionRadius:
                     ApplyExplosionRadius();
                     break;
-                case UpgradeType.ExplosionForce:
-                    ApplyExplosionForce();
-                    break;
             }
 
             // Пересчитываем итоговые значения на живом танке (база из данных + модификаторы)
@@ -83,14 +79,6 @@ namespace TankSurvival
             var projectile = FindAnyObjectByType<Projectile>();
             if (projectile)
                 projectile.m_ExplosionRadius += value;
-        }
-
-        private void ApplyExplosionForce()
-        {
-            // T024: Projectile вместо ShellExplosion
-            var projectile = FindAnyObjectByType<Projectile>();
-            if (projectile)
-                projectile.m_ExplosionForce += value;
         }
     }
 

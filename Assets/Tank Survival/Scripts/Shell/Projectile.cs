@@ -11,7 +11,6 @@ namespace TankSurvival
         [Header("Настройки")]
         public float m_LifeTime = 2f;              // Время жизни снаряда
         public float m_MaxDamage = 5f;             // Максимальный урон (передаётся из Shooting)
-        public float m_ExplosionForce = 1f;        // Сила взрыва
         public float m_ExplosionRadius = 1f;       // Радиус взрыва
         public LayerMask m_TankMask;               // Слои, которые задевает взрыв (T024d)
 
@@ -114,13 +113,6 @@ namespace TankSurvival
                 if (damage > 0f)
                 {
                     damageable.TakeDamage(damage);
-                }
-
-                // Apply explosion force (только если есть PlayerMovement)
-                PlayerMovement pm = rb.GetComponent<PlayerMovement>();
-                if (pm != null)
-                {
-                    pm.AddExplosionForce(m_ExplosionForce, center, m_ExplosionRadius);
                 }
             }
         }

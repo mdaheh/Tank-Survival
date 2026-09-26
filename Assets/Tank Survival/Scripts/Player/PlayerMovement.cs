@@ -26,7 +26,6 @@ namespace TankSurvival
         private Rigidbody m_Rigidbody;              // Reference used to move the tank.
         private InputAction m_MoveAction;           // Action from the new Input System
         private Vector2 m_MovementInput;            // Текущее значение ввода (x=поворот, y=движение)
-        private Vector3 m_ExplosionForceValue;      // Текущая сила от взрыва
         private float m_OriginalPitch;              // Pitch аудио источника в начале сцены
         private ParticleSystem[] m_particleSystems; // Ссылки на все particle системы танка
 
@@ -63,7 +62,6 @@ namespace TankSurvival
         {
             m_Rigidbody.isKinematic = false;
             m_MovementInput = Vector2.zero;
-            m_ExplosionForceValue = Vector3.zero;
 
             m_particleSystems = GetComponentsInChildren<ParticleSystem>();
             for (int i = 0; i < m_particleSystems.Length; ++i)
@@ -197,8 +195,7 @@ namespace TankSurvival
 
             Vector3 movement = transform.forward * speedInput * m_Speed;
 
-            m_Rigidbody.linearVelocity = movement + m_ExplosionForceValue;
-            m_ExplosionForceValue = Vector3.Lerp(m_ExplosionForceValue, Vector3.zero, Time.deltaTime * 3f);
+            m_Rigidbody.linearVelocity = movement;
         }
 
         private void Turn()
@@ -221,28 +218,6 @@ namespace TankSurvival
             }
 
             m_Rigidbody.MoveRotation(m_Rigidbody.rotation * turnRotation);
-        }
-
-        public void AddExplosionForce(float explosionForce, Vector3 explosionPosition, float explosionRadius, float upwardsModifier = 0f)
-        {
-            Vector3 explosionDir = transform.position - explosionPosition;
-            float explosionDistance = explosionDir.magnitude;
-
-            if (upwardsModifier != 0)
-            {
-                explosionDir.y += upwardsModifier;
-                explosionDir.Normalize();
-            }
-            else
-            {
-                explosionDir = explosionDir.normalized;
-            }
-
-            float attenuation = 1f - Mathf.Clamp01(explosionDistance / explosionRadius);
-
-            Vector3 velocityChange = explosionDir * (explosionForce * attenuation);
-
-            m_ExplosionForceValue = velocityChange;
         }
     }
 }
