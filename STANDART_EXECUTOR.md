@@ -52,11 +52,14 @@
 - Правки ассетов/сцены/префабов — **только MCP** (`manage_prefabs`, `manage_scriptable_object`,
   `manage_scene`, `manage_components`). После правки — проверь факт инспекцией, а не «на веру»
   (у `manage_components add` бывают таймауты: компонент может остаться только в памяти).
-- После правки скриптов через файловую систему **дождись компиляции** перед Play Mode (иначе проверка идёт по старому коду и «доказывает» несуществующее).
+- После правки скриптов через файловую систему **дождись компиляции** перед Play Mode: `manage_editor play` сам не компилирует `.cs` — вызови `AssetDatabase.Refresh()` и дождись `EditorApplication.isCompiling=false` и `scriptCompilationFailed=false` (иначе проверка идёт по старому коду и «доказывает» несуществующее).
 - Не создавай ассет с новым типом в одном batch с компиляцией (тип ещё не в сборке → `type_not_found` + файл-дубликат).
 - Правка сцены через `SerializedObject` не помечает её dirty — используй `EditorSceneManager.MarkSceneDirty` + `SaveScene`.
 - Editor-код с модальными окнами (`EditorUtility.DisplayDialog`) через MCP не проверять: отделяй «сбор результата» от «показа».
 - Не батчи `stop`+`play` (гонка: редактор остаётся в Edit Mode); `include_image=true` у скриншота бесполезен агенту — скриншот файлом для человека.
+- В `execute_code` подбирай методы по числу/типу параметров (перегрузки → `Ambiguous match`); различай метод и свойство (`GetMethod`≠`GetProperty`); для параметризованного делегата — `System.Action<T>`; длинные сниппеты собирай из коротких проверенных блоков.
+- Приватные несериализованные поля (`EnemyHealth.m_CurrentHealth`) `SerializedProperty` не видит — читай рефлексией (`GetField`, флаги Public|NonPublic|Instance).
+- UI-цепочки («старт → гибель → экран → меню → старт») проверяй одним синхронным MCP-вызовом (`Button.onClick.Invoke()` + `TakeDamage` у живого `IDamageable` + снимки `activeSelf`), а не точечными вызовами по окну раунда.
 
 
 - Запрещено: скриншоты «на всякий случай», дампы иерархии без `max_depth`, серии запусков «посмотреть».
