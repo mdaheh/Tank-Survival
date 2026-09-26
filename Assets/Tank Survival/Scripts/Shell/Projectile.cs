@@ -100,14 +100,20 @@ namespace TankSurvival
 
             for (int i = 0; i < hitCount; i++)
             {
-                Rigidbody rb = m_OverlapResults[i].GetComponent<Rigidbody>();
+                Collider hitCollider = m_OverlapResults[i];
+                if (hitCollider == null) continue;
+
+                Rigidbody rb = hitCollider.GetComponent<Rigidbody>();
                 if (rb == null) continue;
 
                 IDamageable damageable = rb.GetComponent<IDamageable>();
                 if (damageable == null || !damageable.IsAlive) continue;
 
-                // Расчёт урона по расстоянию (формула не меняется)
-                float distance = Vector3.Distance(rb.position, transform.position);
+                // T083: дистанция урона — до ПОВЕРХНОСТИ коллайдера и от той же точки (center),
+                // из которой строился запрос OverlapSphere. Иначе касание капсулы давало дистанцию
+                // до центра (≥ радиуса) и прямое попадание наносило 0 урона при радиусе меньше
+                // габарита цели. Форма спада и коэффициенты (CalculateDamage) не меняются.
+                float distance = Vector3.Distance(center, hitCollider.ClosestPoint(center));
                 float damage = CalculateDamage(distance);
 
                 if (damage > 0f)

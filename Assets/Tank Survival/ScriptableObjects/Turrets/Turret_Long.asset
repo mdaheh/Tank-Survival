@@ -19,6 +19,6 @@ MonoBehaviour:
   damage: 40
   fireRate: 1.2
   fireRange: 25
-  baseExplosionRadius: 1
+  baseExplosionRadius: 3
   killsRequired: 10
   unlockIcon: {fileID: 0}
