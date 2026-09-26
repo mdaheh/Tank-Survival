@@ -50,11 +50,11 @@ namespace TankSurvival
         private int m_SelectedDifficultyIndex = 0;
         private List<string> m_UnlockedChassisNames = new();
         private List<string> m_UnlockedTurretNames = new();
+        private bool m_UiEventsWired;   // T075: подписки на UI навешиваются один раз за сцену
 
         private void Awake()
         {
             m_CanvasScaler = GetComponentInParent<CanvasScaler>();
-            m_PlayerProgress = SaveSystem.Load();
         }
 
         private void Start()
@@ -81,11 +81,18 @@ namespace TankSurvival
                 }
             }
 
+            // T075: прогресс берём у владельца (GameManager) — собственной загрузки из файла нет.
+            // Здесь, а не в Awake: Start гарантированно выполняется после Awake всех компонентов.
+            RefreshPlayerProgress();
+
             // Настройка сложности
             SetupDifficultySelection();
 
             // Настройка выбора частей (с учётом разблокировок)
             SetupPartSelection();
+
+            // T075: подписки на UI навешиваем один раз, после первичного заполнения списков
+            WireUiEvents();
 
             // Начальное превью
             UpdatePreview();
@@ -102,33 +109,14 @@ namespace TankSurvival
             // Показываем/скрываем панель сложности
             m_DifficultyPanel.SetActive(true);
 
-            // Настройка каждой сложности
-            for (int i = 0; i < m_DifficultyButtons.Length && i < m_DifficultyNames.Length; i++)
-            {
-                bool isUnlocked = m_PlayerProgress.IsDifficultyUnlocked(i);
-
-                // Обновляем текст
-                if (m_DifficultyNames[i] != null)
-                {
-                    string difficultyName = i == 0 ? "Лёгкий" : i == 1 ? "Средний" : "Тяжёлый";
-                    m_DifficultyNames[i].text = difficultyName;
-                }
-
-                // Показываем/скрываем замок
-                if (m_DifficultyLockText[i] != null)
-                {
-                    m_DifficultyLockText[i].gameObject.SetActive(!isUnlocked);
-                }
-
-                // Включаем/отключаем кнопку
-                m_DifficultyButtons[i].interactable = isUnlocked;
-
-                // Подписываемся на клик
-                int index = i;
-                m_DifficultyButtons[i].onClick.AddListener(() => SelectDifficulty(index));
-            }
+            // T075: состояние разблокировки — отдельным методом (без подписок),
+            // чтобы его можно было обновлять и при возврате в меню
+            RefreshDifficultyLocks();
 
             // Автоматически выбираем первую доступную сложность
+            if (m_PlayerProgress == null)
+                return;
+
             for (int i = 0; i < m_DifficultyButtons.Length; i++)
             {
                 if (m_PlayerProgress.IsDifficultyUnlocked(i))
@@ -137,6 +125,85 @@ namespace TankSurvival
                     break;
                 }
             }
+        }
+
+        /// <summary>
+        /// T075: взять актуальный прогресс у владельца (GameManager).
+        /// Собственная загрузка из файла недопустима: сцена не перезагружается, копия устаревает.
+        /// </summary>
+        private void RefreshPlayerProgress()
+        {
+            if (m_GameManager == null)
+            {
+                Debug.LogError("[GameUIHandler] m_GameManager не назначен — прогресс недоступен.");
+                return;
+            }
+
+            m_PlayerProgress = m_GameManager.GetPlayerProgress();
+        }
+
+        /// <summary>
+        /// T075: обновить состояние разблокировки сложностей (тексты, замки, кнопки).
+        /// Подписки не создаёт — безопасен для повторных вызовов.
+        /// </summary>
+        private void RefreshDifficultyLocks()
+        {
+            if (m_PlayerProgress == null)
+                return;
+
+            for (int i = 0; i < m_DifficultyButtons.Length && i < m_DifficultyNames.Length; i++)
+            {
+                bool isUnlocked = m_PlayerProgress.IsDifficultyUnlocked(i);
+
+                if (m_DifficultyNames[i] != null)
+                {
+                    m_DifficultyNames[i].text = i == 0 ? "Лёгкий" : i == 1 ? "Средний" : "Тяжёлый";
+                }
+
+                if (m_DifficultyLockText != null && i < m_DifficultyLockText.Length && m_DifficultyLockText[i] != null)
+                {
+                    m_DifficultyLockText[i].gameObject.SetActive(!isUnlocked);
+                }
+
+                m_DifficultyButtons[i].interactable = isUnlocked;
+            }
+        }
+
+        /// <summary>
+        /// T075: подписки на UI (выбор сложности, смена выбранной части) — один раз за сцену.
+        /// </summary>
+        private void WireUiEvents()
+        {
+            if (m_UiEventsWired)
+                return;
+
+            for (int i = 0; i < m_DifficultyButtons.Length; i++)
+            {
+                int index = i;
+                m_DifficultyButtons[i].onClick.AddListener(() => SelectDifficulty(index));
+            }
+
+            if (m_ChassisDropdown != null)
+            {
+                m_ChassisDropdown.onValueChanged.AddListener(index =>
+                {
+                    m_SelectedChassisIndex = index;
+                    UpdatePreview();
+                    UpdateKillsRequiredText();
+                });
+            }
+
+            if (m_TurretDropdown != null)
+            {
+                m_TurretDropdown.onValueChanged.AddListener(index =>
+                {
+                    m_SelectedTurretIndex = index;
+                    UpdatePreview();
+                    UpdateKillsRequiredText();
+                });
+            }
+
+            m_UiEventsWired = true;
         }
 
         /// <summary>
@@ -159,6 +226,19 @@ namespace TankSurvival
         /// </summary>
         private void SetupPartSelection()
         {
+            RefreshUnlockLists();
+        }
+
+        /// <summary>
+        /// T075: перестроить списки разблокированных частей и заполнить dropdown'ы.
+        /// Подписки не создаёт (они навешиваются один раз в WireUiEvents) — безопасен
+        /// для повторных вызовов при возврате в меню.
+        /// </summary>
+        private void RefreshUnlockLists()
+        {
+            if (m_PlayerProgress == null)
+                return;
+
             // Заполняем списки имён разблокированных частей
             m_UnlockedChassisNames.Clear();
             m_UnlockedTurretNames.Clear();
@@ -197,12 +277,6 @@ namespace TankSurvival
                 m_ChassisDropdown.AddOptions(m_UnlockedChassisNames);
                 m_ChassisDropdown.value = 0;
                 m_SelectedChassisIndex = 0;
-                m_ChassisDropdown.onValueChanged.AddListener(index =>
-                {
-                    m_SelectedChassisIndex = index;
-                    UpdatePreview();
-                    UpdateKillsRequiredText();
-                });
             }
             else if (m_ChassisDropdown != null)
             {
@@ -215,12 +289,6 @@ namespace TankSurvival
                 m_TurretDropdown.AddOptions(m_UnlockedTurretNames);
                 m_TurretDropdown.value = 0;
                 m_SelectedTurretIndex = 0;
-                m_TurretDropdown.onValueChanged.AddListener(index =>
-                {
-                    m_SelectedTurretIndex = index;
-                    UpdatePreview();
-                    UpdateKillsRequiredText();
-                });
             }
             else if (m_TurretDropdown != null)
             {
@@ -444,6 +512,12 @@ namespace TankSurvival
         /// </summary>
         public void ShowPreviewAndDropdowns()
         {
+            // T075: при возврате в меню прогресс мог измениться (убийства в забеге) —
+            // берём актуальный у GameManager и перестраиваем разблокировки (сцена не перезагружается).
+            RefreshPlayerProgress();
+            RefreshUnlockLists();
+            RefreshDifficultyLocks();
+
             // Показываем сценный объект превью (камера + свет)
             if (m_TankPreview != null)
                 m_TankPreview.SetActive(true);
