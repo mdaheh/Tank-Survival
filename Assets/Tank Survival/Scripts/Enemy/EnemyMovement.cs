@@ -42,7 +42,10 @@ namespace TankSurvival
             m_PathfindTimer += Time.deltaTime;
             if (m_PathfindTimer >= m_PathfindInterval)
             {
-                MoveTowardPlayer();
+                // T081: бюджет поворота — время, реально прошедшее с прошлого пересчёта,
+                // а не Time.deltaTime одного кадра. Раньше вызов был раз в m_PathfindInterval,
+                // а бюджет брался из кадра: поворот шёл в (интервал/кадр) раз медленнее заданного.
+                MoveTowardPlayer(m_PathfindTimer);
                 m_PathfindTimer = 0f;
             }
         }
@@ -52,7 +55,7 @@ namespace TankSurvival
         /// Rigidbody автоматически скользит вдоль преграды.
         /// Враги сталкиваются друг с другом, создавая "пробки".
         /// </summary>
-        private void MoveTowardPlayer()
+        private void MoveTowardPlayer(float deltaTime)
         {
             if (m_Player == null)
                 return;
@@ -67,20 +70,24 @@ namespace TankSurvival
 
             direction.Normalize();
 
-            // Поворачиваемся к игроку
-            TurnToward(direction);
+            // Поворачиваемся к игроку — возвращает направление корпуса после поворота
+            Vector3 heading = TurnToward(direction, deltaTime);
 
             // Двигаемся вперёд.
             // При столкновении с коллайдером Rigidbody сам скользит вдоль стены
             // Благодаря настройкам физики (не нужно писать обходной код).
             // Враги сталкиваются друг с другом — создаются "пробки" в узких местах.
-            m_Rigidbody.linearVelocity = transform.forward * m_Speed;
+            // T081: MoveRotation применяется на следующем физическом шаге, поэтому
+            // transform.forward в этом кадре ещё старый — направление берём из результата поворота.
+            m_Rigidbody.linearVelocity = heading * m_Speed;
         }
 
         /// <summary>
-        /// Повернуть к направлению direction
+        /// Повернуть к направлению direction.
+        /// deltaTime — время с прошлого пересчёта направления (T081: интервал, а не кадр).
+        /// Возвращает направление корпуса после поворота, чтобы скорость задать в тот же вызов.
         /// </summary>
-        private void TurnToward(Vector3 direction)
+        private Vector3 TurnToward(Vector3 direction, float deltaTime)
         {
             direction.y = 0;
             direction.Normalize();
@@ -88,14 +95,16 @@ namespace TankSurvival
             Vector3 forward = transform.forward;
             float angle = Vector3.SignedAngle(direction, forward, Vector3.up);
 
-            float maxTurn = m_TurnSpeed * Time.deltaTime;
+            float maxTurn = m_TurnSpeed * deltaTime;
             angle = Mathf.Sign(angle) * Mathf.Min(Mathf.Abs(angle), maxTurn);
 
+            Quaternion turnRotation = Quaternion.AngleAxis(-angle, Vector3.up);
+            Quaternion newRotation = m_Rigidbody.rotation * turnRotation;
+
             if (Mathf.Abs(angle) > 0.001f)
-            {
-                Quaternion turnRotation = Quaternion.AngleAxis(-angle, Vector3.up);
-                m_Rigidbody.MoveRotation(m_Rigidbody.rotation * turnRotation);
-            }
+                m_Rigidbody.MoveRotation(newRotation);
+
+            return newRotation * Vector3.forward;
         }
 
         /// <summary>
