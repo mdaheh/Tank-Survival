@@ -567,6 +567,7 @@ Because moving <project>/Temp/UnityTempFile-<hash> to <project>/Assets/Tank Surv
 | Отброс врагов в ГД не требуется | если понадобится для «зрелищности» — отдельная задача с позиционным сдвигом (кинематические враги Ф4), а не физический импульс |
 | Проверка «проходимости волны» = убийство всех врагов → смена волны (T082 A4), а не «танк выстоял стоя» | движение/уклонение — механика игрока, агентом не воспроизводится; «гибель стоя» — норма, не баланс-дефект |
 | Точки спавна врагов — N фиксированных точек/зон (дефолт 5, масштабируется списком), расставляет человек | враги идут из зон; данные, не хардкод |
+| Модель данных волн — `WaveData` = план волн одной сложности (waveCount, пауза, база+прирост, состав с весами); `DifficultyData` = идентичность + разблокировка + ссылка на `WaveData` | единый источник правды; числовые поля сложности не дублируются |
 
 
 
@@ -598,6 +599,9 @@ Because moving <project>/Temp/UnityTempFile-<hash> to <project>/Assets/Tank Surv
 | `manage_editor play` не компилирует правки `.cs`, внесённые внешним инструментом (первый прогон идёт на старом коде) | после правки скриптов: `AssetDatabase.Refresh()` + дождаться `EditorApplication.isCompiling=false` и `scriptCompilationFailed=false`, затем Play Mode |
 | CodeDom: `System.Action` (без generic) не принимает аргументов | для параметризованного делегата — `System.Action<T>` |
 | UI-цепочки («старт → гибель → экран → меню → старт») проверяются одним MCP-вызовом | `Button.onClick.Invoke()` + `TakeDamage` у живого `IDamageable` + снимки `activeSelf/activeInHierarchy` (обработчики синхронные), таран не нужен |
+| `refresh_unity(scope=scripts)` не импортирует новый `.cs` (`refresh_triggered=false`) | для импорта нового скрипта — `scope=all` (или `mode=force`), затем компиляция |
+| Мета новой папки (`Waves.meta`) не попадает в `git add` по pathspec папки | перечислять `*.meta` папки явно |
+| CodeDom (C#6): тип без namespace (`DifficultyData`) не виден рядом с типами в `TankSurvival` | в сниппетах использовать полные имена (`TankSurvival.EnemyData`) |
 
 
 
