@@ -34,6 +34,10 @@ namespace TankSurvival
         private ObjectPool<Projectile> m_ShellPool;
         private Projectile m_ShellPrefab;
 
+        // T024c: пул VFX-эффектов взрыва
+        private ObjectPool<BurstEffect> m_BurstPool;
+        private BurstEffect m_BurstPrefab;
+
         /// <summary>
         /// Инициализация пулов врагов по префабам.
         /// prewarmCount — сколько объектов создать при старте; maxPoolSize — лимит.
@@ -77,6 +81,9 @@ namespace TankSurvival
 
                 m_EnemyPools[prefab] = pool;
             }
+
+            // T024c: пул VFX инициализируется вместе с пулом врагов
+            // Префаб взрыва будет назначен из LevelManager после создания PoolManager
         }
 
         /// <summary>
@@ -254,6 +261,81 @@ namespace TankSurvival
         private void OnDestroyShell(Projectile shell)
         {
             Object.Destroy(shell.gameObject);
+ }
+
+        /// <summary>
+        /// Инициализация пула VFX-эффектов взрыва (T024c).
+        /// </summary>
+        public void InitBurstPool(BurstEffect burstPrefab, int prewarmCount = 4, int maxPoolSize = 32)
+        {
+            if (burstPrefab == null) return;
+            m_BurstPrefab = burstPrefab;
+
+            m_BurstPool = new ObjectPool<BurstEffect>(
+                createFunc: () => CreateBurst(burstPrefab),
+                actionOnGet: OnGetBurst,
+                actionOnRelease: OnReleaseBurst,
+                actionOnDestroy: OnDestroyBurst,
+                collectionCheck: true,
+                defaultCapacity: prewarmCount,
+                maxSize: maxPoolSize
+            );
+
+            if (prewarmCount > 0)
+            {
+                var list = new List<BurstEffect>(prewarmCount);
+                for (int i = 0; i < prewarmCount; i++)
+                {
+                    list.Add(m_BurstPool.Get());
+                }
+                for (int i = 0; i < list.Count; i++)
+                {
+                    m_BurstPool.Release(list[i]);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Взять VFX-эффект взрыва из пула (T024c).
+        /// </summary>
+        public BurstEffect GetBurst(Vector3 position)
+        {
+            if (m_BurstPool == null) return null;
+            BurstEffect burst = m_BurstPool.Get();
+            burst.transform.position = position;
+            burst.gameObject.SetActive(true);
+            return burst;
+        }
+
+        /// <summary>
+        /// Вернуть VFX-эффект взрыва в пул (T024c).
+        /// </summary>
+        public void ReleaseBurst(BurstEffect burst)
+        {
+            if (burst == null || m_BurstPool == null) return;
+            m_BurstPool.Release(burst);
+        }
+
+        private BurstEffect CreateBurst(BurstEffect prefab)
+        {
+            BurstEffect burst = Object.Instantiate(prefab, Vector3.zero, Quaternion.identity);
+            burst.SetPool(this);
+            return burst;
+        }
+
+        private void OnGetBurst(BurstEffect burst)
+        {
+            burst.OnGetFromPool();
+        }
+
+        private void OnReleaseBurst(BurstEffect burst)
+        {
+            burst.OnReleaseFromPool();
+        }
+
+        private void OnDestroyBurst(BurstEffect burst)
+        {
+            Object.Destroy(burst.gameObject);
         }
     }
 }

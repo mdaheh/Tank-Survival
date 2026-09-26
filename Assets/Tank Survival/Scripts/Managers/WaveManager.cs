@@ -24,6 +24,8 @@ namespace TankSurvival
         [SerializeField] private Projectile m_ShellPrefab;
         [SerializeField, Min(0)] private int m_ShellPoolPrewarmCount = 16;
         [SerializeField, Min(1)] private int m_ShellPoolMaxSize = 100;
+        [Header("VFX Pool (T024c)")]
+        [SerializeField] private GameObject m_ExplosionPrefab;
 
         [Header("Current Wave Info")]
         public int currentWave;                   // Текущая волна (начинается с 1)
@@ -62,6 +64,15 @@ namespace TankSurvival
             if (m_ShellPrefab != null)
             {
                 m_EnemyPool.InitShellPool(m_ShellPrefab, m_ShellPoolPrewarmCount, m_ShellPoolMaxSize);
+            }
+            // T024c: Инициализация пула VFX-эффектов взрыва
+            if (m_ExplosionPrefab != null)
+            {
+                var burstEffect = m_ExplosionPrefab.GetComponent<BurstEffect>();
+                if (burstEffect != null)
+                {
+                    m_EnemyPool.InitBurstPool(burstEffect, prewarmCount: 4, maxPoolSize: 32);
+                }
             }
         }
 

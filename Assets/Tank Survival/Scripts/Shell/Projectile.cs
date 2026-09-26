@@ -14,12 +14,6 @@ namespace TankSurvival
         public float m_ExplosionForce = 1f;        // Сила взрыва
         public float m_ExplosionRadius = 1f;       // Радиус взрыва
         public LayerMask m_TankMask;               // Слои, которые задевает взрыв (T024d)
-        
-        [Header("Аудио")]
-        public AudioClip m_ExplosionAudio;         // Звук взрыва (копия из префаба)
-        
-        [Header("Визуал")]
-        public GameObject m_BurstEffect;           // Burst-эффект (частицы + звук)
 
         private float m_LifeTimer;
         private bool m_Detonated;
@@ -139,48 +133,17 @@ namespace TankSurvival
 
         private void UseBurstEffect()
         {
-            if (m_BurstEffect != null)
+            // T024c: берём VFX из пула вместо Instantiate
+            if (m_Pool == null) return;
+            BurstEffect burst = m_Pool.GetBurst(transform.position);
+            if (burst != null)
             {
-                // Ищем ParticleSystem во всех детей
-                ParticleSystem ps = m_BurstEffect.GetComponentInChildren<ParticleSystem>();
-                if (ps != null)
-                {
-                    ps.Play();
-                }
-
-                // Ищем AudioSource
-                AudioSource audio = m_BurstEffect.GetComponent<AudioSource>();
-                if (audio == null)
-                {
-                    audio = m_BurstEffect.GetComponentInChildren<AudioSource>();
-                }
-                
-                if (audio != null && m_ExplosionAudio != null)
-                {
-                    audio.clip = m_ExplosionAudio;
-                    audio.Play();
-                }
-
-                // Дезактивируем объект после завершения анимации (не destroy!)
-                // Используем Invoke с отменой — безопасно для пула
-                float duration = ps != null ? ps.main.duration : 0.1f;
-                Invoke(nameof(DisableBurstEffect), duration);
-            }
-        }
-
-        private void DisableBurstEffect()
-        {
-            if (m_BurstEffect != null)
-            {
-                m_BurstEffect.SetActive(false);
+                burst.PlayAndRelease();
             }
         }
 
         private void ReturnToPool()
         {
-            // Отменяем Invoke если он ещё не сработал
-            CancelInvoke();
-
             // Отключаем коллайдер
             if (m_Collider != null)
             {
@@ -219,7 +182,6 @@ namespace TankSurvival
 
             m_LastKnownTargetPos = Vector3.zero;
             m_HasTarget = false;
-            CancelInvoke();
 
             // Включаем коллайдер
             if (m_Collider != null)
@@ -237,7 +199,6 @@ namespace TankSurvival
             m_LifeTimer = 0f;
             m_LastKnownTargetPos = Vector3.zero;
             m_HasTarget = false;
-            CancelInvoke();
 
             // Отключаем коллайдер пока объект в пуле
             if (m_Collider != null)
