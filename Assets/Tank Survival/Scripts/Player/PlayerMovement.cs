@@ -85,7 +85,9 @@ namespace TankSurvival
             var inputUser = GetComponent<TankInputUser>();
             if (inputUser == null)
             {
-                inputUser = gameObject.AddComponent<TankInputUser>();
+                // T077: состав компонентов задаётся префабом — фоллбэк маскировал ошибку конфигурации
+                Debug.LogError("[PlayerMovement] На объекте нет TankInputUser — движение недоступно (проверьте префаб шасси).");
+                return;
             }
 
             // Получаем действие Move из нового Input System

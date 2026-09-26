@@ -160,7 +160,9 @@ namespace TankSurvival
             var shooting = m_TurretInstance.GetComponent<Shooting>();
             if (shooting == null)
             {
-                shooting = m_TurretInstance.AddComponent<Shooting>();
+                // T077: состав компонентов задаётся префабом — фоллбэк маскировал ошибку конфигурации
+                Debug.LogError("[PlayerManager] На башне нет компонента Shooting — стрельба недоступна (проверьте префаб башни).");
+                return;
             }
             shooting.SetStatBlock(m_StatBlock);
             shooting.fireRange = turret.fireRange; // fireRange остаётся базой из данных (в StatBlock его нет)
